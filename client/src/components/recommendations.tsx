@@ -1,5 +1,5 @@
 import { usePersonalizedRecommendations, useDiscoveryRecommendations } from "@/hooks/use-recommendations";
-import { Recommendation } from "@shared/types";
+import { Recommendation } from "../../shared/types";
 import { Card } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -132,8 +132,8 @@ function RecommendationItem({ recommendation }: RecommendationItemProps) {
     updatedAt: new Date(),
     folderId: null,
     favorite: false,
-    tags: [],
-    folder: null,
+    tags: [{ id: 0, name: 'recommended', createdAt: new Date() }], // Need tags with proper structure
+    folder: undefined, // Use undefined instead of null for optional property
     category: recommendation.category,
     source: {
       id: "rec-" + recommendation.id,
@@ -144,7 +144,7 @@ function RecommendationItem({ recommendation }: RecommendationItemProps) {
   
   return (
     <div className="relative group">
-      <BookmarkTile bookmark={bookmark} showTagsOnHover={false} />
+      <BookmarkTile bookmark={bookmark} />
       
       <div className="absolute top-2 right-2 transition-opacity opacity-0 group-hover:opacity-100">
         <Badge variant="secondary" className="bg-black/50 backdrop-blur-sm text-white hover:bg-black/70">
