@@ -274,6 +274,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get bookmarks by tag
+  app.get("/api/tags/:id/bookmarks", async (req: Request, res: Response) => {
+    const tagId = Number(req.params.id);
+    
+    try {
+      const bookmarks = await storage.getBookmarksByTag(tagId);
+      res.json(bookmarks);
+    } catch (error) {
+      console.error("Error getting bookmarks by tag:", error);
+      res.status(500).json({ message: "Failed to get bookmarks by tag" });
+    }
+  });
+
   // Bookmark Tags API
   app.post("/api/bookmarks/:id/tags", async (req: Request, res: Response) => {
     const bookmarkId = Number(req.params.id);
