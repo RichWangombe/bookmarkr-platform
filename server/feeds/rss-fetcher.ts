@@ -37,10 +37,14 @@ interface ExtendedItem {
   description?: string;
 }
 
-// Create a new RSS parser instance
+// Create a new RSS parser instance with more browser-like headers
 const parser = new Parser<{}, ExtendedItem>({
   headers: {
-    'User-Agent': 'BookmarkrNews/1.0 (https://example.com)'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'max-age=0'
   },
   customFields: {
     item: [
@@ -49,11 +53,34 @@ const parser = new Parser<{}, ExtendedItem>({
       ['enclosure', 'enclosure'],
       ['content:encoded', 'content:encoded']
     ]
-  }
+  },
+  timeout: 10000, // Increase timeout for slower feeds
 });
 
 /**
- * Fetches and parses an RSS feed from a given URL
+ * Helper function to delay execution - used for retries
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Try to fetch the RSS feed with retries
+ */
+async function tryFetchRss(url: string, retries = 2): Promise<any> {
+  try {
+    return await parser.parseURL(url);
+  } catch (error) {
+    if (retries <= 0) throw error;
+    
+    // Exponential backoff: wait longer between each retry
+    const backoffTime = 1000 * Math.pow(2, 3 - retries);
+    console.log(`Retrying RSS fetch in ${backoffTime}ms...`);
+    await delay(backoffTime);
+    return tryFetchRss(url, retries - 1);
+  }
+}
+
+/**
+ * Fetches and parses an RSS feed from a given URL with improved error handling
  */
 export async function fetchRssFeed(source: NewsFeedSource): Promise<NewsItem[]> {
   if (!source.rssUrl) {
@@ -62,9 +89,31 @@ export async function fetchRssFeed(source: NewsFeedSource): Promise<NewsItem[]> 
   }
   
   try {
-    const feed = await parser.parseURL(source.rssUrl);
+    // Try using rss-parser first with retries
+    let feed;
+    try {
+      feed = await tryFetchRss(source.rssUrl);
+    } catch (rssError) {
+      // If RSS parsing fails, try fetching with axios and manually parsing
+      console.log(`RSS parser failed for ${source.name}, trying alternative fetch method...`);
+      try {
+        const response = await axios.get(source.rssUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          },
+          timeout: 15000
+        });
+        
+        // Try to parse the XML response
+        feed = await parser.parseString(response.data);
+      } catch (axiosError) {
+        console.error(`Alternative fetch method also failed for ${source.name}`);
+        throw rssError; // Re-throw the original error
+      }
+    }
     
-    return feed.items.map(item => {
+    return feed.items.map((item: ExtendedItem) => {
       // Extract image from various possible RSS formats
       let imageUrl: string | undefined;
       
@@ -81,17 +130,18 @@ export async function fetchRssFeed(source: NewsFeedSource): Promise<NewsItem[]> 
         );
         
         // Find the first image that's not an icon or tiny image (by looking at URL patterns)
-        const bestMatch = imgMatches.find(match => {
+        const bestMatch = imgMatches.find((match: RegExpMatchArray) => {
           const url = match[1];
           // Skip tiny icons, common tracking pixels, etc.
-          return !/icon|logo|badge|avatar|pixel|tracking|\.gif$|1x1|\.svg/i.test(url) &&
+          return url && 
+                 !/icon|logo|badge|avatar|pixel|tracking|\.gif$|1x1|\.svg/i.test(url) &&
                  !/width=["']?\d{1,2}["']?/i.test(match[0]) &&
                  !/height=["']?\d{1,2}["']?/i.test(match[0]);
         });
         
-        if (bestMatch) {
+        if (bestMatch && bestMatch[1]) {
           imageUrl = bestMatch[1];
-        } else if (imgMatches.length > 0) {
+        } else if (imgMatches.length > 0 && imgMatches[0][1]) {
           // Fall back to first image if no good match
           imageUrl = imgMatches[0][1];
         }
@@ -101,7 +151,7 @@ export async function fetchRssFeed(source: NewsFeedSource): Promise<NewsItem[]> 
           (item.content || '').matchAll(/<img[^>]+src="([^">]+)"[^>]*>/gi)
         );
         
-        if (imgMatches.length > 0) {
+        if (imgMatches.length > 0 && imgMatches[0] && imgMatches[0][1]) {
           imageUrl = imgMatches[0][1]; 
         }
       }

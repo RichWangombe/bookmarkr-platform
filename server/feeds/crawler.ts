@@ -40,6 +40,36 @@ function extractMetadata(html: string, url: string): {
 }
 
 /**
+ * Helper function to delay execution - used for retries
+ */
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Try to request a URL with retries and exponential backoff
+ */
+async function tryFetchWithRetry(url: string, retries = 2): Promise<any> {
+  try {
+    return await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Cache-Control': 'max-age=0'
+      },
+      timeout: 15000
+    });
+  } catch (error) {
+    if (retries <= 0) throw error;
+    
+    // Exponential backoff
+    const backoffTime = 1000 * Math.pow(2, 3 - retries);
+    console.log(`Retrying fetch in ${backoffTime}ms...`);
+    await delay(backoffTime);
+    return tryFetchWithRetry(url, retries - 1);
+  }
+}
+
+/**
  * Crawls articles from a website without RSS
  */
 export async function crawlWebsite(source: NewsFeedSource): Promise<NewsItem[]> {
@@ -49,11 +79,7 @@ export async function crawlWebsite(source: NewsFeedSource): Promise<NewsItem[]> 
   }
   
   try {
-    const response = await axios.get(source.websiteUrl, {
-      headers: {
-        'User-Agent': 'BookmarkrNews/1.0 (https://example.com)'
-      }
-    });
+    const response = await tryFetchWithRetry(source.websiteUrl);
     
     const $ = cheerio.load(response.data);
     const articles: NewsItem[] = [];
@@ -61,7 +87,7 @@ export async function crawlWebsite(source: NewsFeedSource): Promise<NewsItem[]> 
     // Find all article elements using the provided selector
     $(source.crawlSelector).each((i, element) => {
       // Limit to recent articles (prevent overloading)
-      if (i >= 10) return;
+      if (i >= 15) return;
       
       // Extract article URL
       const linkElement = $(element).find('a').first();
