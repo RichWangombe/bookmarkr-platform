@@ -134,8 +134,8 @@ export function Discover() {
 
   // Helper function to render category header
   const renderCategoryHeader = (title: string, category: string) => (
-    <div className={`flex items-center py-2 border-l-4 pl-3 mb-4 ${getCategoryColor(category)}`}>
-      <h2 className="text-xl font-bold">{title}</h2>
+    <div className={`flex items-center py-2 border-l-2 pl-3 mb-4 ${getCategoryColor(category)}`}>
+      <h2 className="text-lg font-medium">{title}</h2>
     </div>
   );
   
