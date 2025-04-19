@@ -120,6 +120,7 @@ export type BookmarkWithTags = Bookmark & {
     name: string;
     iconUrl?: string;
   }; // Source info for news articles
+  updatedAt: Date; // For news articles
 };
 
 export type FolderWithCount = Folder & {

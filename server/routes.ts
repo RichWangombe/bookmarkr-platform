@@ -17,8 +17,11 @@ import {
   newsSources, 
   getSourcesByCategory 
 } from "./feeds";
+import suggestionsRouter from "./routes/suggestions";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Mount the suggestions router
+  app.use('/api/suggestions', suggestionsRouter);
   // Bookmarks API
   app.get("/api/bookmarks", async (req: Request, res: Response) => {
     const query = req.query.q as string | undefined;
