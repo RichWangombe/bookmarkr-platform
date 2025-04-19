@@ -52,12 +52,12 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-text text-opacity-70">Sort by:</span>
+            <span className="text-sm text-muted-foreground">Sort by:</span>
             <Select
               value={sortBy}
               onValueChange={setSortBy}
             >
-              <SelectTrigger className="text-sm bg-white border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+              <SelectTrigger className="text-sm bg-background/80 border border-border/30 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent backdrop-blur-sm">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -105,29 +105,95 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 text-red-500 p-4 rounded-md">
-          Error loading bookmarks. Please try again.
+        <div className="bg-red-900/20 text-red-400 p-6 rounded-xl border border-red-800/30 backdrop-blur-sm shadow-sm">
+          <div className="flex items-center gap-3">
+            <i className="ri-error-warning-line text-2xl"></i>
+            <div>
+              <h3 className="font-medium mb-1">Error loading bookmarks</h3>
+              <p className="text-sm opacity-80">Please try refreshing the page or try again later.</p>
+            </div>
+          </div>
         </div>
       ) : sortedBookmarks.length === 0 ? (
-        <div className="bg-accent p-8 rounded-md text-center">
+        <div className="bg-card/80 p-8 rounded-xl text-center border border-border/30 backdrop-blur-sm shadow-sm">
           <div className="text-4xl mb-4">📚</div>
           <h3 className="text-lg font-medium mb-2">No bookmarks found</h3>
-          <p className="text-text text-opacity-70 mb-4">
+          <p className="text-muted-foreground mb-4">
             {searchQuery 
               ? `No bookmarks matching "${searchQuery}". Try a different search term.` 
               : "Your bookmark collection is empty. Add your first bookmark to get started."}
           </p>
+          <Button variant="outline" className="bg-background/80 backdrop-blur-sm border-primary/20 hover:border-primary/30">
+            <i className="ri-add-line mr-2"></i> Add Your First Bookmark
+          </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sortedBookmarks.map((bookmark: BookmarkWithTags) => (
-            <BookmarkCard 
-              key={bookmark.id} 
-              bookmark={bookmark} 
-              onEdit={handleEditBookmark}
-            />
-          ))}
-        </div>
+        <>
+          {viewMode === 'magazine' ? (
+            <div className="grid grid-cols-12 gap-4">
+              {sortedBookmarks.length > 0 && (
+                <div className="col-span-12 md:col-span-8 lg:col-span-6">
+                  <BookmarkCard 
+                    key={sortedBookmarks[0].id} 
+                    bookmark={sortedBookmarks[0]} 
+                    onEdit={handleEditBookmark}
+                    size="large"
+                  />
+                </div>
+              )}
+              
+              <div className="col-span-12 md:col-span-4 lg:col-span-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {sortedBookmarks.slice(1, 5).map((bookmark: BookmarkWithTags) => (
+                    <BookmarkCard 
+                      key={bookmark.id} 
+                      bookmark={bookmark} 
+                      onEdit={handleEditBookmark}
+                      size="small"
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {sortedBookmarks.length > 5 && (
+                <div className="col-span-12">
+                  <h3 className="text-lg font-semibold mb-4 border-b border-border/30 pb-2">More Articles</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {sortedBookmarks.slice(5).map((bookmark: BookmarkWithTags) => (
+                      <BookmarkCard 
+                        key={bookmark.id} 
+                        bookmark={bookmark} 
+                        onEdit={handleEditBookmark}
+                        size="medium"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {sortedBookmarks.map((bookmark: BookmarkWithTags) => (
+                <BookmarkCard 
+                  key={bookmark.id} 
+                  bookmark={bookmark} 
+                  onEdit={handleEditBookmark}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {sortedBookmarks.map((bookmark: BookmarkWithTags) => (
+                <BookmarkCard 
+                  key={bookmark.id} 
+                  bookmark={bookmark} 
+                  onEdit={handleEditBookmark}
+                  variant="list"
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {bookmarkToEdit && (
