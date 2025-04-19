@@ -1,109 +1,87 @@
-import { Request, Response, Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
-import { log } from '../vite';
 
-// Schema for source suggestions
+// Create router
+const suggestionsRouter = Router();
+export default suggestionsRouter;
+
+// Define validation schema
 const sourceSuggestionSchema = z.object({
-  name: z.string().min(2),
-  websiteUrl: z.string().url(),
-  rssUrl: z.string().url().optional().or(z.literal('')),
-  category: z.enum(["technology", "business", "news", "science", "design", "ai"]),
-  description: z.string().optional().or(z.literal('')),
-  hasRssFeed: z.boolean().default(false),
+  name: z.string().min(2, { message: "Source name must be at least 2 characters" }),
+  url: z.string().url({ message: "Please enter a valid URL" }),
+  category: z.string().min(1, { message: "Please select a category" }),
+  rssUrl: z.string().url({ message: "Please enter a valid RSS URL" }).optional().or(z.literal("")),
+  description: z.string().min(10, { message: "Description must be at least 10 characters" }),
 });
 
-// Router for suggestion endpoints
-const suggestionsRouter = Router();
-
-// Directory for storing suggestions
-const SUGGESTIONS_DIR = path.join(process.cwd(), 'data', 'suggestions');
-
-// Ensure suggestions directory exists
+// Create suggestions directory if it doesn't exist
 function ensureSuggestionsDir() {
-  if (!fs.existsSync(SUGGESTIONS_DIR)) {
-    try {
-      // Create parent directory if it doesn't exist
-      if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
-        fs.mkdirSync(path.join(process.cwd(), 'data'));
-      }
-      fs.mkdirSync(SUGGESTIONS_DIR);
-      log('Created suggestions directory', 'suggestions');
-    } catch (error) {
-      log(`Error creating suggestions directory: ${error}`, 'suggestions');
-    }
+  const suggestionsDir = path.join(process.cwd(), 'suggestions');
+  if (!fs.existsSync(suggestionsDir)) {
+    fs.mkdirSync(suggestionsDir, { recursive: true });
   }
+  return suggestionsDir;
 }
 
-// Get all source suggestions
+// GET /api/suggestions/source
+// Retrieves all source suggestions
 suggestionsRouter.get('/source', (req: Request, res: Response) => {
   try {
-    ensureSuggestionsDir();
-    
-    // Read all suggestion files
-    const files = fs.readdirSync(SUGGESTIONS_DIR);
+    const suggestionsDir = ensureSuggestionsDir();
+    const files = fs.readdirSync(suggestionsDir);
     const suggestions = files
-      .filter(file => file.endsWith('.json') && file.startsWith('source-'))
+      .filter(file => file.startsWith('source-') && file.endsWith('.json'))
       .map(file => {
-        const fileContent = fs.readFileSync(path.join(SUGGESTIONS_DIR, file), 'utf-8');
-        try {
-          return JSON.parse(fileContent);
-        } catch (e) {
-          return null;
-        }
-      })
-      .filter(Boolean);
+        const content = fs.readFileSync(path.join(suggestionsDir, file), 'utf-8');
+        return JSON.parse(content);
+      });
     
-    return res.json(suggestions);
+    res.json(suggestions);
   } catch (error) {
-    log(`Error getting source suggestions: ${error}`, 'suggestions');
-    return res.status(500).json({ error: 'Failed to retrieve source suggestions' });
+    console.error('Error fetching suggestions:', error);
+    res.status(500).json({ error: 'Failed to fetch suggestions' });
   }
 });
 
-// Submit a new source suggestion
+// POST /api/suggestions/source
+// Saves a new source suggestion
 suggestionsRouter.post('/source', (req: Request, res: Response) => {
   try {
-    // Validate request body
-    const validation = sourceSuggestionSchema.safeParse(req.body);
+    // Validate the request body
+    const validationResult = sourceSuggestionSchema.safeParse(req.body);
     
-    if (!validation.success) {
+    if (!validationResult.success) {
       return res.status(400).json({ 
         error: 'Invalid suggestion data', 
-        details: validation.error.format() 
+        details: validationResult.error.format() 
       });
     }
+
+    const suggestion = validationResult.data;
     
-    const suggestion = validation.data;
-    ensureSuggestionsDir();
-    
-    // Create a unique filename with timestamp
-    const timestamp = new Date().getTime();
-    const sanitizedName = suggestion.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const filename = `source-${sanitizedName}-${timestamp}.json`;
-    
-    // Add metadata for tracking
-    const dataToSave = {
+    // Add timestamp and ID
+    const data = {
+      id: `source-${Date.now()}`,
       ...suggestion,
-      submitted: new Date().toISOString(),
-      status: 'pending',
-      id: `${sanitizedName}-${timestamp}`,
+      submittedAt: new Date().toISOString(),
+      status: 'pending', // pending, approved, rejected
     };
     
-    // Write to file
+    // Create suggestions directory if it doesn't exist
+    const suggestionsDir = ensureSuggestionsDir();
+    
+    // Write the suggestion to a file
+    const filename = `source-${Date.now()}.json`;
     fs.writeFileSync(
-      path.join(SUGGESTIONS_DIR, filename),
-      JSON.stringify(dataToSave, null, 2),
-      'utf-8'
+      path.join(suggestionsDir, filename),
+      JSON.stringify(data, null, 2)
     );
     
-    log(`New source suggestion received: ${suggestion.name}`, 'suggestions');
-    return res.status(201).json({ success: true, id: dataToSave.id });
+    res.status(201).json({ success: true, id: data.id });
   } catch (error) {
-    log(`Error storing source suggestion: ${error}`, 'suggestions');
-    return res.status(500).json({ error: 'Failed to store source suggestion' });
+    console.error('Error saving suggestion:', error);
+    res.status(500).json({ error: 'Failed to save suggestion' });
   }
 });
-
-export default suggestionsRouter;

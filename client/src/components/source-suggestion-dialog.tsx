@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +22,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -31,100 +31,91 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { PlusCircle } from "lucide-react";
 
-// Form schema for source suggestion
+// Source suggestion schema
 const sourceSuggestionSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  websiteUrl: z.string().url({
-    message: "Please enter a valid URL.",
-  }),
-  rssUrl: z.string().optional().or(z.literal('')),
-  category: z.enum(["technology", "business", "news", "science", "design", "ai"], {
-    required_error: "Please select a category.",
-  }),
-  description: z.string().optional().or(z.literal('')),
-  hasRssFeed: z.boolean().default(false),
+  name: z.string().min(2, { message: "Source name must be at least 2 characters" }),
+  url: z.string().url({ message: "Please enter a valid URL" }),
+  category: z.string().min(1, { message: "Please select a category" }),
+  rssUrl: z.string().url({ message: "Please enter a valid RSS URL" }).optional().or(z.literal("")),
+  description: z.string().min(10, { message: "Description must be at least 10 characters" }),
 });
 
-type SourceSuggestionValues = z.infer<typeof sourceSuggestionSchema>;
+type SourceSuggestionForm = z.infer<typeof sourceSuggestionSchema>;
 
-export function SourceSuggestionDialog() {
-  const { toast } = useToast();
+interface SourceSuggestionDialogProps {
+  className?: string;
+}
+
+export function SourceSuggestionDialog({ className }: SourceSuggestionDialogProps) {
   const [open, setOpen] = useState(false);
-  
-  // Initialize form
-  const form = useForm<SourceSuggestionValues>({
+  const { toast } = useToast();
+
+  // Define form with validation
+  const form = useForm<SourceSuggestionForm>({
     resolver: zodResolver(sourceSuggestionSchema),
     defaultValues: {
       name: "",
-      websiteUrl: "",
+      url: "",
+      category: "",
       rssUrl: "",
-      category: "technology",
       description: "",
-      hasRssFeed: false,
     },
   });
-  
-  // Mutation for submitting a source suggestion
-  const submitMutation = useMutation({
-    mutationFn: async (values: SourceSuggestionValues) => {
-      return await apiRequest('POST', '/api/suggestions/source', values);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Source suggestion submitted",
-        description: "Thank you for contributing to our content sources!",
+
+  const onSubmit = async (data: SourceSuggestionForm) => {
+    try {
+      const response = await fetch("/api/suggestions/source", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit suggestion");
+      }
+
+      toast({
+        title: "Suggestion Submitted",
+        description: "Thank you for suggesting a new source!",
+      });
+
       form.reset();
       setOpen(false);
-    },
-    onError: (error) => {
+    } catch (error) {
       toast({
-        title: "Error submitting suggestion",
-        description: error instanceof Error ? error.message : "Please try again later",
+        title: "Error",
+        description: "There was a problem submitting your suggestion. Please try again.",
         variant: "destructive",
       });
-    },
-  });
-  
-  // Handle form submission
-  function onSubmit(values: SourceSuggestionValues) {
-    // If hasRssFeed is false, make sure rssUrl is empty
-    if (!values.hasRssFeed) {
-      values.rssUrl = "";
     }
-    
-    submitMutation.mutate(values);
-  }
-  
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
-          className="gap-2 bg-background/80 backdrop-blur-sm hover:bg-background/95"
+          size="sm" 
+          className={`gap-1 text-xs ${className}`}
         >
-          <i className="ri-add-line"></i>
-          Suggest Source
+          <PlusCircle className="h-3.5 w-3.5" />
+          <span>Suggest Source</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Suggest a Content Source</DialogTitle>
+          <DialogTitle>Suggest a New Source</DialogTitle>
           <DialogDescription>
-            Help us improve content discovery by suggesting websites or RSS feeds
-            that you find valuable.
+            Help us grow our content library by suggesting a new website or blog for us to include.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
               name="name"
@@ -132,47 +123,40 @@ export function SourceSuggestionDialog() {
                 <FormItem>
                   <FormLabel>Source Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. TechCrunch, The Verge" {...field} />
+                    <Input placeholder="e.g. Wired Magazine" {...field} />
                   </FormControl>
                   <FormDescription>
-                    The name of the publication or website.
+                    The name of the website or publication
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
-              name="websiteUrl"
+              name="url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Website URL</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="https://example.com" 
-                      type="url" 
-                      {...field} 
-                    />
+                    <Input placeholder="https://www.example.com" {...field} />
                   </FormControl>
                   <FormDescription>
-                    The main website address.
+                    The main URL of the website
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
@@ -180,110 +164,58 @@ export function SourceSuggestionDialog() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="technology">Technology</SelectItem>
-                      <SelectItem value="business">Business</SelectItem>
-                      <SelectItem value="news">News</SelectItem>
-                      <SelectItem value="science">Science</SelectItem>
                       <SelectItem value="design">Design</SelectItem>
-                      <SelectItem value="ai">AI & ML</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                      <SelectItem value="science">Science</SelectItem>
+                      <SelectItem value="ai">AI & Machine Learning</SelectItem>
+                      <SelectItem value="culture">Culture & Entertainment</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    The main content category of this source.
+                    The primary topic of this source
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
-              name="hasRssFeed"
+              name="rssUrl"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem>
+                  <FormLabel>RSS Feed URL (Optional)</FormLabel>
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Input placeholder="https://www.example.com/feed" {...field} />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      This source has an RSS feed
-                    </FormLabel>
-                    <FormDescription>
-                      Check this if you know the website has an RSS feed available.
-                    </FormDescription>
-                  </div>
+                  <FormDescription>
+                    If you know the RSS feed URL, please provide it
+                  </FormDescription>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-            
-            {form.watch("hasRssFeed") && (
-              <FormField
-                control={form.control}
-                name="rssUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>RSS Feed URL</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://example.com/rss" 
-                        type="url" 
-                        {...field}
-                        value={field.value || ""} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      The direct URL to the RSS feed (if known).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            
+
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Why should we add this source?</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="What makes this source valuable?"
+                    <Textarea
+                      placeholder="Tell us why this source would be valuable to include..."
+                      className="resize-none"
                       {...field}
-                      value={field.value || ""}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Briefly explain why this source would be a good addition.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          
+
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={submitMutation.isPending}
-              >
-                {submitMutation.isPending ? (
-                  <>
-                    <i className="ri-loader-2-line animate-spin mr-2"></i>
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Suggestion"
-                )}
-              </Button>
+              <Button type="submit">Submit Suggestion</Button>
             </DialogFooter>
           </form>
         </Form>

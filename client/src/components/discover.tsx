@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BookmarkTile } from "./bookmark-tile";
 import { useState } from "react";
 import { BookmarkWithTags } from "@shared/schema";
+import { SourceSuggestionDialog } from "./source-suggestion-dialog";
 
 interface NewsItem {
   id: string;
@@ -177,14 +178,17 @@ export function Discover() {
     <div className="w-full space-y-6">
       <Tabs defaultValue="all" className="w-full" onValueChange={setActiveCategory}>
         <div className="border-b sticky top-0 bg-background/95 backdrop-blur z-30 pb-2">
-          <TabsList className="w-full h-auto justify-start overflow-x-auto flex-nowrap gap-2 p-1">
-            <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
-            <TabsTrigger value="technology" className="text-xs sm:text-sm">Technology</TabsTrigger>
-            <TabsTrigger value="business" className="text-xs sm:text-sm">Business</TabsTrigger>
-            <TabsTrigger value="design" className="text-xs sm:text-sm">Design</TabsTrigger>
-            <TabsTrigger value="science" className="text-xs sm:text-sm">Science</TabsTrigger>
-            <TabsTrigger value="ai" className="text-xs sm:text-sm">AI & ML</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center px-1">
+            <TabsList className="h-auto justify-start overflow-x-auto flex-nowrap gap-2 p-1">
+              <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
+              <TabsTrigger value="technology" className="text-xs sm:text-sm">Technology</TabsTrigger>
+              <TabsTrigger value="business" className="text-xs sm:text-sm">Business</TabsTrigger>
+              <TabsTrigger value="design" className="text-xs sm:text-sm">Design</TabsTrigger>
+              <TabsTrigger value="science" className="text-xs sm:text-sm">Science</TabsTrigger>
+              <TabsTrigger value="ai" className="text-xs sm:text-sm">AI & ML</TabsTrigger>
+            </TabsList>
+            <SourceSuggestionDialog className="ml-2" />
+          </div>
         </div>
         
         <TabsContent value="all" className="space-y-8 mt-6">
