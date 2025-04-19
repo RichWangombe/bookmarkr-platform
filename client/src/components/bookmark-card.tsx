@@ -91,8 +91,8 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
         whileHover={{ y: -5 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
       >
-        <Card className="bookmark-card overflow-hidden rounded-xl border border-gray-100 hover:border-primary/20 transition-all duration-300 hover:shadow-lg">
-          <div className="aspect-video bg-gray-100 relative overflow-hidden">
+        <Card className="bookmark-card overflow-hidden rounded-xl border border-border/30 hover:border-primary/30 transition-all duration-300 hover:shadow-lg shadow-sm bg-card/80 backdrop-blur-sm">
+          <div className="aspect-video bg-muted relative overflow-hidden">
             <a href={bookmark.url} target="_blank" rel="noopener noreferrer">
               <img 
                 src={imageUrl} 
@@ -102,17 +102,18 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
                   (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
             </a>
             
             {bookmark.folder && (
               <div className="absolute top-2 left-2">
                 <Badge 
                   variant="outline" 
-                  className="bg-white/90 backdrop-blur-sm text-xs font-medium shadow-sm"
+                  className="bg-background/80 backdrop-blur-sm text-xs font-medium shadow-sm border-opacity-50"
                   style={{ 
                     borderColor: bookmark.folder.color,
-                    color: bookmark.folder.color
+                    color: bookmark.folder.color,
+                    backgroundColor: `${bookmark.folder.color}10`
                   }}
                 >
                   {bookmark.folder.name}
@@ -124,7 +125,7 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                className="p-1.5 bg-background/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-background/90 transition-colors"
                 onClick={handleToggleFavorite}
                 disabled={toggleFavoriteMutation.isPending}
               >
@@ -135,7 +136,7 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
                     className="ri-star-fill text-yellow-500"
                   />
                 ) : (
-                  <i className="ri-star-line text-gray-700/70 hover:text-yellow-500"></i>
+                  <i className="ri-star-line text-muted-foreground hover:text-yellow-500"></i>
                 )}
               </Button>
               
@@ -144,9 +145,9 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                    className="p-1.5 bg-background/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-background/90 transition-colors"
                   >
-                    <i className="ri-more-2-fill text-gray-700/70"></i>
+                    <i className="ri-more-2-fill text-muted-foreground"></i>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
@@ -174,12 +175,12 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
                 />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 leading-tight mb-1">
+                <h3 className="font-semibold text-foreground leading-tight mb-1">
                   <a href={bookmark.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                     {truncateText(bookmark.title, 60)}
                   </a>
                 </h3>
-                <div className="flex items-center text-xs text-gray-500">
+                <div className="flex items-center text-xs text-muted-foreground">
                   <span>{domain}</span>
                   <span className="mx-1">•</span>
                   <span>{formatDate(bookmark.createdAt)}</span>
@@ -188,7 +189,7 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
             </div>
             
             {bookmark.description && (
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                 {bookmark.description}
               </p>
             )}
@@ -199,7 +200,7 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
                   <Badge 
                     key={tag.id} 
                     variant="secondary"
-                    className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                    className="bg-primary/15 text-primary hover:bg-primary/25 transition-colors backdrop-blur-sm"
                   >
                     #{tag.name}
                   </Badge>
