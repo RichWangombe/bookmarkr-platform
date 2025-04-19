@@ -40,30 +40,19 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Mobile menu toggle button */}
-      {isMobile && (
-        <div className="md:hidden fixed top-4 left-4 z-50">
-          <button
-            id="menuToggle"
-            className="p-2 rounded-md bg-white shadow-[0_2px_4px_rgba(0,0,0,0.1)] text-text"
-            onClick={toggleSidebar}
-          >
-            <i className="ri-menu-line text-xl"></i>
-          </button>
-        </div>
-      )}
-
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-y-auto bg-accent">
+      <main className="flex-1 flex flex-col overflow-y-auto">
         <Header 
           onMenuToggle={toggleSidebar} 
           onSearch={handleSearch}
           searchQuery={searchQuery}
         />
-        {children}
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -20,8 +20,25 @@ export interface NewsItem {
   tags?: string[];     // Associated tags
 }
 
+// Extended interface for RSS items with additional fields we need
+interface ExtendedItem {
+  // Standard fields from rss-parser
+  title?: string;
+  link?: string;
+  pubDate?: string;
+  content?: string;
+  contentSnippet?: string;
+  
+  // Custom fields from RSS feeds
+  media?: { $?: { url?: string } };
+  thumbnail?: { $?: { url?: string } };
+  enclosure?: { url?: string };
+  'content:encoded'?: string;
+  description?: string;
+}
+
 // Create a new RSS parser instance
-const parser = new Parser({
+const parser = new Parser<{}, ExtendedItem>({
   headers: {
     'User-Agent': 'BookmarkrNews/1.0 (https://example.com)'
   },
@@ -29,7 +46,8 @@ const parser = new Parser({
     item: [
       ['media:content', 'media'],
       ['media:thumbnail', 'thumbnail'],
-      ['enclosure', 'enclosure']
+      ['enclosure', 'enclosure'],
+      ['content:encoded', 'content:encoded']
     ]
   }
 });

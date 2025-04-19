@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
-import { AddBookmarkDialog } from "@/components/add-bookmark-dialog";
+import {
+  Search,
+  Menu,
+  X,
+  Bell,
+  BookmarkPlus,
+  Sun,
+  Moon,
+} from "lucide-react";
+import { useTheme } from "./theme-provider";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -11,127 +19,102 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle, onSearch, searchQuery }: HeaderProps) {
-  const [location] = useLocation();
-  const [showAddBookmark, setShowAddBookmark] = useState(false);
-  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [inputValue, setInputValue] = useState(searchQuery);
+  const { theme, setTheme } = useTheme();
+  
+  const handleSearch = () => {
+    onSearch(inputValue);
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(localSearch);
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   return (
-    <header className="bg-card/80 backdrop-blur-sm border-b border-border/40 sticky top-0 z-30 shadow-sm">
-      {/* Top header bar */}
-      <div className="flex items-center justify-between px-4 py-2 md:px-6">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuToggle}
-            className="mr-2 text-foreground"
-          >
-            <i className="ri-menu-line text-xl"></i>
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-          
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold text-foreground">
-              <span className="text-primary">B</span>ookmarkr<span className="text-primary">News</span>
-            </h1>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+      <div className="container flex h-16 items-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2 md:hidden"
+          onClick={onMenuToggle}
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          <div className="relative h-8 w-8 mr-2 overflow-hidden rounded-full">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+              B
+            </div>
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">Bookmarkr</h1>
+        </div>
+        
+        <div className="flex-1 flex items-center justify-center px-2 lg:ml-6 lg:justify-end">
+          <div className="max-w-lg w-full lg:max-w-xs">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Search className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <Input
+                type="text"
+                placeholder="Search bookmarks..."
+                className="block w-full rounded-md py-1.5 pl-10 pr-3 text-gray-900 bg-background ring-1 ring-inset ring-input focus-visible:ring-2 focus-visible:ring-ring"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              {inputValue && (
+                <div className="absolute inset-y-0 right-0 flex py-1.5 pr-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setInputValue("")}
+                    className="inline-flex items-center px-1 rounded border-0 focus:ring-2 focus:ring-inset focus:ring-ring"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    <span className="sr-only">Clear search</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center">
-          <form onSubmit={handleSearchSubmit} className="relative mx-2 w-full max-w-sm">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <i className="ri-search-line text-muted-foreground"></i>
-              </div>
-              <Input
-                type="search"
-                className="block w-full pl-10 pr-4 py-1.5 rounded-full border border-border/50 bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/20 text-sm"
-                placeholder="Search bookmarks..."
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-              />
-            </div>
-          </form>
-
-          <div className="flex items-center space-x-3 ml-2">
-            <Button
-              variant="outline"
-              className="hidden md:flex items-center px-3 py-1.5 rounded-full border-primary/20 hover:border-primary/30 bg-background/50 text-sm"
-              onClick={() => setShowAddBookmark(true)}
-            >
-              <i className="ri-add-line mr-1.5"></i>
-              <span>Add Content</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="md:hidden flex items-center justify-center p-2 rounded-full border-primary/20 hover:border-primary/30 bg-background/50"
-              onClick={() => setShowAddBookmark(true)}
-            >
-              <i className="ri-add-line"></i>
-            </Button>
-            
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-background/70 transition-colors"
-              >
-                <i className="ri-notification-3-line text-muted-foreground"></i>
-              </Button>
-              <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
-            </div>
-            
-            <div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/90 text-white font-medium"
-              >
-                JD
-              </Button>
+        <div className="flex items-center gap-2 ml-2">
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+          
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Notifications</span>
+          </Button>
+          
+          <Button variant="ghost" size="icon">
+            <BookmarkPlus className="h-5 w-5" />
+            <span className="sr-only">Add bookmark</span>
+          </Button>
+          
+          <div className="h-8 w-8 overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-full flex items-center justify-center">
+              <span className="text-sm font-medium">US</span>
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Secondary nav - Categories */}
-      <div className="flex items-center space-x-1 px-2 md:px-4 py-1 overflow-x-auto scrollbar-hide border-t border-border/20">
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm bg-primary text-white">
-          For you
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          Technology
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          Design
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          Programming
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          Business
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          Science
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          News
-        </Button>
-        <Button variant="ghost" size="sm" className="rounded-full px-3 text-sm text-muted-foreground hover:text-foreground">
-          AI & ML
-        </Button>
-      </div>
-
-      <AddBookmarkDialog
-        open={showAddBookmark}
-        onOpenChange={setShowAddBookmark}
-      />
     </header>
   );
 }

@@ -9,6 +9,14 @@ import {
 } from "@shared/schema";
 import fetch from "node-fetch";
 import { extractMetadata } from "./metadata";
+import { 
+  getAllNews, 
+  getNewsByCategory, 
+  getTrendingNews,
+  getTopNewsByCategory, 
+  newsSources, 
+  getSourcesByCategory 
+} from "./feeds";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Bookmarks API
@@ -286,10 +294,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Recommendations API
+  // News Feed API
+  app.get("/api/news", async (_req: Request, res: Response) => {
+    try {
+      const news = await getAllNews();
+      res.json(news);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+      res.status(500).json({ message: "Failed to fetch news" });
+    }
+  });
+  
+  app.get("/api/news/trending", async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      const news = await getTrendingNews(limit);
+      res.json(news);
+    } catch (error) {
+      console.error("Error fetching trending news:", error);
+      res.status(500).json({ message: "Failed to fetch trending news" });
+    }
+  });
+  
+  app.get("/api/news/category/:category", async (req: Request, res: Response) => {
+    try {
+      const { category } = req.params;
+      const news = await getNewsByCategory(category);
+      res.json(news);
+    } catch (error) {
+      console.error(`Error fetching ${req.params.category} news:`, error);
+      res.status(500).json({ message: `Failed to fetch ${req.params.category} news` });
+    }
+  });
+  
+  app.get("/api/news/top-by-category", async (_req: Request, res: Response) => {
+    try {
+      const topNews = await getTopNewsByCategory();
+      res.json(topNews);
+    } catch (error) {
+      console.error("Error fetching top news by category:", error);
+      res.status(500).json({ message: "Failed to fetch top news by category" });
+    }
+  });
+  
+  app.get("/api/news/sources", async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const sources = category ? getSourcesByCategory(category) : newsSources;
+      res.json(sources);
+    } catch (error) {
+      console.error("Error fetching news sources:", error);
+      res.status(500).json({ message: "Failed to fetch news sources" });
+    }
+  });
+  
+  // Recommendations API - now uses our news feed system
   app.get("/api/recommendations", async (_req: Request, res: Response) => {
     try {
-      // Get all bookmarks to analyze
+      // Try to get trending news for recommendations
+      try {
+        const trendingNews = await getTrendingNews(3);
+        if (trendingNews.length > 0) {
+          // Convert news items to recommendation format
+          const recommendations = trendingNews.map((item, index) => ({
+            id: index + 1,
+            title: item.title,
+            description: item.description,
+            thumbnailUrl: item.imageUrl || "https://images.unsplash.com/photo-1633356122544-f134324a6cee",
+            url: item.url,
+            source: item.source.name,
+            readTime: `${Math.floor(Math.random() * 10) + 2} min read`, // Estimate read time
+            type: "article"
+          }));
+          
+          return res.json(recommendations);
+        }
+      } catch (error) {
+        console.error("Error fetching trending news for recommendations:", error);
+        // Fall back to analyzing bookmarks if news fetch fails
+      }
+      
+      // If we reach here, either trending news failed or returned no items
+      // Fall back to analyzing user bookmarks
       const allBookmarks = await storage.getAllBookmarks();
       
       if (allBookmarks.length === 0) {
@@ -312,9 +398,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .slice(0, 3)
         .map(([name]) => name);
       
-      // Create recommendations based on most popular tags
-      // In a real app, these would be from an external API or recommendation engine
-      const recommendations = [
+      // Create fallback recommendations based on most popular tags
+      const fallbackRecommendations = [
         {
           id: 1,
           title: "React Performance Optimization: A Complete Guide",
@@ -347,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       ];
       
-      res.json(recommendations);
+      res.json(fallbackRecommendations);
     } catch (error) {
       console.error("Error getting recommendations:", error);
       res.status(500).json({ message: "Failed to get recommendations" });
