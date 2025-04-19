@@ -113,6 +113,7 @@ export type InsertBookmarkTag = z.infer<typeof insertBookmarkTagSchema>;
 export type BookmarkWithTags = Bookmark & {
   tags: Tag[];
   folder?: Folder;
+  imageUrl?: string; // For articles from RSS/crawler with image URLs
 };
 
 export type FolderWithCount = Folder & {

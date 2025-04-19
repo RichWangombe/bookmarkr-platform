@@ -83,25 +83,32 @@ export function Discover() {
       domain = newsItem.source.name;
     }
     
-    return {
+    // Create a bookmark that adheres to the BookmarkWithTags type
+    const bookmark: BookmarkWithTags = {
       id: parseInt(newsItem.id.split('-')[1], 10) || Math.floor(Math.random() * 10000),
       title: newsItem.title,
-      description: newsItem.description,
-      // Keep both imageUrl and thumbnailUrl to ensure our BookmarkCard can use either
-      imageUrl: newsItem.imageUrl,
-      thumbnailUrl: newsItem.imageUrl,
+      description: newsItem.description || null,
+      thumbnailUrl: newsItem.imageUrl || null,
+      imageUrl: newsItem.imageUrl || null,
       url: newsItem.url,
       domain: domain,
       favorite: false,
       folderId: null,
-      tags: newsItem.tags ? newsItem.tags.map((tag, index) => ({ id: index, name: tag })) : [],
+      tags: newsItem.tags 
+        ? newsItem.tags.map((tag, index) => ({ 
+            id: index, 
+            name: tag,
+            createdAt: new Date()
+          })) 
+        : [],
       createdAt: new Date(newsItem.publishedAt),
       updatedAt: new Date(),
-      category: newsItem.category,
-      // Additional news-specific properties
+      // Mark the source information for display
       source: newsItem.source,
-      publishedAt: new Date(newsItem.publishedAt),
+      category: newsItem.category,
     };
+    
+    return bookmark;
   };
   
   // Handle loading state
