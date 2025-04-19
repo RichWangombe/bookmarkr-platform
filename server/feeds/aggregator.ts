@@ -1,5 +1,7 @@
 import { fetchAllRssNews, fetchNewsByCategory, NewsItem } from './rss-fetcher';
 import { crawlAllSources, crawlByCategory } from './crawler';
+import { fetchFromApis, searchFromApis } from './api-service';
+import { fetchFromSocialPlatforms } from './social-service';
 
 // In-memory cache to avoid hitting the same sources repeatedly
 let newsCache: {
@@ -114,7 +116,7 @@ function sortByRecency(items: NewsItem[]): NewsItem[] {
 }
 
 /**
- * Gets all news from both RSS and crawler sources
+ * Gets all news from all sources (RSS, crawler, APIs, social)
  * Uses caching to prevent repeated fetches within the TTL
  */
 export async function getAllNews(): Promise<NewsItem[]> {
@@ -124,14 +126,19 @@ export async function getAllNews(): Promise<NewsItem[]> {
   }
   
   try {
-    // Fetch from both sources in parallel
-    const [rssNews, crawledNews] = await Promise.all([
+    // Fetch from all sources in parallel
+    const [rssNews, crawledNews, apiNews, socialNews] = await Promise.all([
       fetchAllRssNews(),
-      crawlAllSources()
+      crawlAllSources(),
+      fetchFromApis(),
+      fetchFromSocialPlatforms()
     ]);
     
-    // Combine, deduplicate, and sort
-    const combined = combineAndDeduplicate(rssNews, crawledNews);
+    // Combine all sources with deduplication
+    let combined = combineAndDeduplicate(rssNews, crawledNews);
+    combined = combineAndDeduplicate(combined, apiNews);
+    combined = combineAndDeduplicate(combined, socialNews);
+    
     const sorted = sortByRecency(combined);
     
     // Update cache
@@ -148,7 +155,7 @@ export async function getAllNews(): Promise<NewsItem[]> {
 }
 
 /**
- * Gets news for a specific category from both RSS and crawler sources
+ * Gets news for a specific category from all sources (RSS, crawler, APIs, social)
  * Uses caching to prevent repeated fetches within the TTL
  */
 export async function getNewsByCategory(category: string): Promise<NewsItem[]> {
@@ -168,14 +175,19 @@ export async function getNewsByCategory(category: string): Promise<NewsItem[]> {
   }
   
   try {
-    // Fetch from both sources in parallel
-    const [rssNews, crawledNews] = await Promise.all([
+    // Fetch from all sources in parallel
+    const [rssNews, crawledNews, apiNews, socialNews] = await Promise.all([
       fetchNewsByCategory(category),
-      crawlByCategory(category)
+      crawlByCategory(category),
+      fetchFromApis(category),
+      fetchFromSocialPlatforms(category)
     ]);
     
-    // Combine, deduplicate, and sort
-    const combined = combineAndDeduplicate(rssNews, crawledNews);
+    // Combine all sources with deduplication
+    let combined = combineAndDeduplicate(rssNews, crawledNews);
+    combined = combineAndDeduplicate(combined, apiNews);
+    combined = combineAndDeduplicate(combined, socialNews);
+    
     const sorted = sortByRecency(combined);
     
     // Update category cache
