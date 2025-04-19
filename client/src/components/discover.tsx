@@ -6,6 +6,7 @@ import { BookmarkTile } from "./bookmark-tile";
 import { useState } from "react";
 import { BookmarkWithTags } from "@shared/schema";
 import { SourceSuggestionDialog } from "./source-suggestion-dialog";
+import { RecommendationsSection } from "./recommendations";
 
 interface NewsItem {
   id: string;
