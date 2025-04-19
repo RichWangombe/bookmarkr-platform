@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Recommendation } from "../../shared/types";
+import { Recommendation } from "../types/recommendations";
 
 // Hook for fetching personalized recommendations
 export function usePersonalizedRecommendations(limit: number = 10) {

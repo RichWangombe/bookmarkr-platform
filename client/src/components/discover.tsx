@@ -177,6 +177,9 @@ export function Discover() {
   
   return (
     <div className="w-full space-y-6">
+      {/* Personalized Recommendations Section */}
+      <RecommendationsSection />
+      
       <Tabs defaultValue="all" className="w-full" onValueChange={setActiveCategory}>
         <div className="border-b sticky top-0 bg-background/95 backdrop-blur z-30 pb-2">
           <div className="flex justify-between items-center px-1">

@@ -1,5 +1,5 @@
 import { usePersonalizedRecommendations, useDiscoveryRecommendations } from "@/hooks/use-recommendations";
-import { Recommendation } from "../../shared/types";
+import { Recommendation } from "../types/recommendations";
 import { Card } from "@/components/ui/card";
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
