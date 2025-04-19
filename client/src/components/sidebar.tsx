@@ -41,12 +41,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         animate={{ x: isMobile && !isOpen ? -300 : 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className={cn(
-          "w-64 bg-white/80 backdrop-blur-lg rounded-r-2xl shadow-lg fixed inset-y-0 left-0 z-40",
-          "md:relative border-r border-gray-100"
+          "w-64 bg-background/80 backdrop-blur-xl rounded-r-2xl shadow-xl fixed inset-y-0 left-0 z-40",
+          "md:relative border-r border-border/30"
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="p-5 border-b border-gray-100">
+          <div className="p-5 border-b border-border/20">
             <motion.h1 
               className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center"
               initial={{ opacity: 0, y: -10 }}
@@ -73,7 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       "flex items-center p-3 rounded-xl font-medium transition-all",
                       location === "/"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-gray-100 text-gray-700"
+                        : "hover:bg-muted text-foreground"
                     )}
                   >
                     <i className="ri-dashboard-line mr-3 text-lg"></i>
@@ -93,7 +93,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       "flex items-center p-3 rounded-xl font-medium transition-all",
                       location === "/favorites"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-gray-100 text-gray-700"
+                        : "hover:bg-muted text-foreground"
                     )}
                   >
                     <i className="ri-star-line mr-3 text-lg"></i>
@@ -113,7 +113,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       "flex items-center p-3 rounded-xl font-medium transition-all",
                       location === "/tags"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-gray-100 text-gray-700"
+                        : "hover:bg-muted text-foreground"
                     )}
                   >
                     <i className="ri-price-tag-3-line mr-3 text-lg"></i>
@@ -133,7 +133,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       "flex items-center p-3 rounded-xl font-medium transition-all",
                       location === "/folders"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-gray-100 text-gray-700"
+                        : "hover:bg-muted text-foreground"
                     )}
                   >
                     <i className="ri-folder-line mr-3 text-lg"></i>
@@ -153,7 +153,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       "flex items-center p-3 rounded-xl font-medium transition-all",
                       location === "/discover"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-gray-100 text-gray-700"
+                        : "hover:bg-muted text-foreground"
                     )}
                   >
                     <i className="ri-compass-line mr-3 text-lg"></i>
@@ -200,11 +200,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <Link
                           href={`/folders/${folder.id}`}
                           onClick={() => isMobile && onClose()}
-                          className="flex items-center p-2.5 px-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                          className="flex items-center p-2.5 px-3 rounded-lg text-foreground hover:bg-muted transition-colors"
                         >
                           <div 
                             className="w-7 h-7 rounded-md flex items-center justify-center mr-2.5"
-                            style={{ backgroundColor: `${folder.color}20` }}
+                            style={{ backgroundColor: `${folder.color}30` }}
                           >
                             <i
                               className="ri-folder-fill text-lg"
@@ -215,7 +215,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           {folder.count > 0 && (
                             <Badge 
                               variant="outline" 
-                              className="ml-auto py-0 px-1.5 h-5 min-w-5 flex items-center justify-center bg-white text-gray-500 text-xs"
+                              className="ml-auto py-0 px-1.5 h-5 min-w-5 flex items-center justify-center bg-background/30 backdrop-blur-sm text-muted-foreground text-xs"
                             >
                               {folder.count}
                             </Badge>
