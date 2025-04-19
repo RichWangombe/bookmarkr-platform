@@ -144,17 +144,18 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
   return (
     <>
       <motion.div
-        whileHover={{ y: -5 }}
+        whileHover={{ y: -8 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className="h-full"
       >
-        <Card className={`bookmark-tile group relative overflow-hidden rounded-xl border-0 transition-all duration-300 hover:shadow-xl shadow-md h-full ${getCategoryColor(bookmark.category)} hover:border-l-2 border-l border-l-transparent`}>
-          {/* Pure image background */}
-          <div className="absolute inset-0 w-full h-full bg-black">
+        <Card className={`bookmark-tile group relative overflow-hidden rounded-xl border-0 transition-all duration-300 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-primary/10 shadow-md dark:shadow-lg dark:shadow-black/30 h-full ${getCategoryColor(bookmark.category)} hover:border-l-2 border-l border-l-transparent dark:bg-[#0c111d]/90`}>
+          {/* Pure image background with enhanced treatment */}
+          <div className="absolute inset-0 w-full h-full bg-black/90 dark:bg-[#080d16]/90 overflow-hidden">
+            <div className="absolute inset-0 opacity-30 dark:opacity-20 mix-blend-overlay bg-gradient-to-br from-blue-500/10 to-purple-500/10 z-10"></div>
             <img 
               src={imageUrl} 
               alt={bookmark.title} 
-              className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 scale-100"
+              className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 scale-100 group-hover:brightness-110 brightness-90 dark:filter dark:contrast-110 dark:saturate-[1.15]"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
               }}
@@ -166,7 +167,7 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
             <Button 
               variant="ghost" 
               size="icon"
-              className="p-1.5 bg-black/60 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 transition-colors border border-white/10"
+              className="p-1.5 bg-black/60 dark:bg-[#0a101c]/70 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 dark:hover:bg-primary/30 transition-all border border-white/10 dark:border-primary/20"
               onClick={handleToggleFavorite}
               disabled={toggleFavoriteMutation.isPending}
             >
@@ -186,7 +187,7 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  className="p-1.5 bg-black/60 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 transition-colors border border-white/10"
+                  className="p-1.5 bg-black/60 dark:bg-[#0a101c]/70 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 dark:hover:bg-primary/30 transition-all border border-white/10 dark:border-primary/20"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <i className="ri-more-2-fill text-white/80"></i>
@@ -209,8 +210,8 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
               {/* Invisible spacer div to maintain aspect ratio */}
               <div className="w-full h-full"></div>
               
-              {/* Hover overlay with all text info */}
-              <div className="absolute inset-0 bg-black/70 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {/* Hover overlay with all text info - enhanced glass-morphism effect */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/75 to-black/40 dark:from-[#060b14]/95 dark:via-[#0a101c]/85 dark:to-[#0c1220]/50 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm">
                 {/* Source info */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-black/70 backdrop-blur-md p-1 flex items-center justify-center border border-white/10">
@@ -241,7 +242,7 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
                 {bookmark.folder && (
                   <Badge 
                     variant="outline" 
-                    className="mt-2 w-fit bg-black/50 backdrop-blur-md text-xs font-normal shadow-sm border-opacity-50"
+                    className="mt-2 w-fit bg-black/50 dark:bg-[#0a101c]/70 backdrop-blur-md text-xs font-normal shadow-sm border-opacity-50 dark:shadow-sm dark:shadow-black/20"
                     style={{ 
                       borderColor: bookmark.folder.color,
                       color: bookmark.folder.color,
@@ -261,13 +262,13 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
                         <Badge 
                           key={tag.id}
                           variant="secondary"
-                          className="bg-white/15 text-white hover:bg-white/25 transition-colors backdrop-blur-md text-xs"
+                          className="bg-white/15 dark:bg-primary/20 text-white dark:text-blue-100 hover:bg-white/25 dark:hover:bg-primary/30 transition-all backdrop-blur-md text-xs shadow-sm"
                         >
                           #{tag.name}
                         </Badge>
                       ))}
                       {bookmark.tags.length > 2 && (
-                        <Badge variant="outline" className="text-xs text-white/80 border-white/20">+{bookmark.tags.length - 2}</Badge>
+                        <Badge variant="outline" className="text-xs text-white/80 dark:text-blue-200/90 border-white/20 dark:border-primary/20 dark:bg-primary/10 shadow-sm backdrop-blur-md">+{bookmark.tags.length - 2}</Badge>
                       )}
                     </div>
                   )}
