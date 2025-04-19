@@ -164,13 +164,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
               <div className="mt-8">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-gray-400 tracking-wider px-3">
+                  <h3 className="text-xs font-bold text-muted-foreground tracking-wider px-3">
                     COLLECTIONS
                   </h3>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full">
-                        <i className="ri-add-line text-gray-500"></i>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-muted">
+                        <i className="ri-add-line text-muted-foreground"></i>
                         <span className="sr-only">Add Folder</span>
                       </Button>
                     </TooltipTrigger>
@@ -225,7 +225,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     ))
                   ) : (
                     <motion.div 
-                      className="px-3 py-2 text-sm text-gray-500 italic"
+                      className="px-3 py-2 text-sm text-muted-foreground italic"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 0.7 }}
                     >
@@ -237,13 +237,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
               <div className="mt-8">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-gray-400 tracking-wider px-3">
+                  <h3 className="text-xs font-bold text-muted-foreground tracking-wider px-3">
                     TAGS
                   </h3>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full">
-                        <i className="ri-add-line text-gray-500"></i>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-muted">
+                        <i className="ri-add-line text-muted-foreground"></i>
                         <span className="sr-only">Add Tag</span>
                       </Button>
                     </TooltipTrigger>
@@ -274,14 +274,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       >
                         <Badge 
                           variant="secondary"
-                          className="bg-primary/5 hover:bg-primary/10 text-primary cursor-pointer"
+                          className="bg-primary/15 hover:bg-primary/25 text-primary cursor-pointer backdrop-blur-sm"
                         >
                           #{tag.name}
                         </Badge>
                       </Link>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-500 italic">No tags yet</span>
+                    <span className="text-sm text-muted-foreground italic">No tags yet</span>
                   )}
                 </motion.div>
               </div>
@@ -289,7 +289,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </ScrollArea>
 
           <motion.div 
-            className="border-t border-gray-100 p-5"
+            className="border-t border-border/20 p-5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
@@ -298,7 +298,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="w-full justify-start text-gray-600 hover:text-primary"
+                className="w-full justify-start text-muted-foreground hover:text-primary"
               >
                 <i className="ri-settings-4-line mr-2"></i>
                 <span>Settings</span>
