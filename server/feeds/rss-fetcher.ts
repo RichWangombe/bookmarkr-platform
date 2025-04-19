@@ -75,9 +75,35 @@ export async function fetchRssFeed(source: NewsFeedSource): Promise<NewsItem[]> 
       } else if (item.enclosure && item.enclosure.url) {
         imageUrl = item.enclosure.url;
       } else if (item['content:encoded']) {
-        // Try to extract image from HTML content
-        const match = /<img[^>]+src="([^">]+)"/i.exec(item['content:encoded']);
-        if (match) imageUrl = match[1];
+        // Try to extract image from HTML content, prioritizing larger images
+        const imgMatches = Array.from(
+          (item['content:encoded'] || '').matchAll(/<img[^>]+src="([^">]+)"[^>]*>/gi)
+        );
+        
+        // Find the first image that's not an icon or tiny image (by looking at URL patterns)
+        const bestMatch = imgMatches.find(match => {
+          const url = match[1];
+          // Skip tiny icons, common tracking pixels, etc.
+          return !/icon|logo|badge|avatar|pixel|tracking|\.gif$|1x1|\.svg/i.test(url) &&
+                 !/width=["']?\d{1,2}["']?/i.test(match[0]) &&
+                 !/height=["']?\d{1,2}["']?/i.test(match[0]);
+        });
+        
+        if (bestMatch) {
+          imageUrl = bestMatch[1];
+        } else if (imgMatches.length > 0) {
+          // Fall back to first image if no good match
+          imageUrl = imgMatches[0][1];
+        }
+      } else if (item.content) {
+        // Try content field if content:encoded is missing
+        const imgMatches = Array.from(
+          (item.content || '').matchAll(/<img[^>]+src="([^">]+)"[^>]*>/gi)
+        );
+        
+        if (imgMatches.length > 0) {
+          imageUrl = imgMatches[0][1]; 
+        }
       }
       
       // Create a unique ID using the source and link

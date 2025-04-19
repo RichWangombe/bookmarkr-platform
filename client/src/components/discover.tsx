@@ -76,13 +76,22 @@ export function Discover() {
   
   // Convert news items to bookmark format for consistent display
   const convertNewsToBookmark = (newsItem: NewsItem) => {
+    let domain = '';
+    try {
+      domain = new URL(newsItem.url).hostname.replace('www.', '');
+    } catch (e) {
+      domain = newsItem.source.name;
+    }
+    
     return {
       id: parseInt(newsItem.id.split('-')[1], 10) || Math.floor(Math.random() * 10000),
       title: newsItem.title,
       description: newsItem.description,
-      thumbnailUrl: newsItem.imageUrl || '',
+      // Keep both imageUrl and thumbnailUrl to ensure our BookmarkCard can use either
+      imageUrl: newsItem.imageUrl,
+      thumbnailUrl: newsItem.imageUrl,
       url: newsItem.url,
-      domain: new URL(newsItem.url).hostname.replace('www.', ''),
+      domain: domain,
       favorite: false,
       folderId: null,
       tags: newsItem.tags ? newsItem.tags.map((tag, index) => ({ id: index, name: tag })) : [],

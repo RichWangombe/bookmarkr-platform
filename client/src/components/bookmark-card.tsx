@@ -81,8 +81,8 @@ export function BookmarkCard({ bookmark, onEdit, size = 'medium', variant = 'def
     setShowDeleteAlert(false);
   };
 
-  // Default image if none provided
-  const imageUrl = bookmark.thumbnailUrl || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
+  // Use thumbnail URL if available, otherwise use imageUrl field that's added from RSS/crawler
+  const imageUrl = bookmark.thumbnailUrl || bookmark.imageUrl || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
   
   // Get domain if not already provided
   const domain = bookmark.domain || getDomainFromUrl(bookmark.url);

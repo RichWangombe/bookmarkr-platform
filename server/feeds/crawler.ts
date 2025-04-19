@@ -84,11 +84,44 @@ export async function crawlWebsite(source: NewsFeedSource): Promise<NewsItem[]> 
                     
       const description = $(element).find('p').first().text().trim() || '';
       
-      // Find image element
+      // Find the best image element (prioritizing larger images, skipping icons)
       let imageUrl: string | undefined;
-      const imgElement = $(element).find('img').first();
-      if (imgElement.length > 0) {
-        imageUrl = imgElement.attr('src') || imgElement.attr('data-src');
+      
+      // Check for Open Graph or Twitter image first
+      const ogImage = $('meta[property="og:image"]').attr('content');
+      const twitterImage = $('meta[name="twitter:image"]').attr('content');
+      
+      if (ogImage) {
+        imageUrl = ogImage;
+      } else if (twitterImage) {
+        imageUrl = twitterImage;
+      } else {
+        // Look for images in the article card
+        const allImages = $(element).find('img');
+        
+        // Try to find a suitable image
+        for (let i = 0; i < allImages.length; i++) {
+          const img = allImages.eq(i);
+          const src = img.attr('src') || img.attr('data-src') || img.attr('data-lazy-src');
+          const width = parseInt(img.attr('width') || '0', 10);
+          const height = parseInt(img.attr('height') || '0', 10);
+          
+          // Skip small images, icons, avatars, etc.
+          if (src && 
+              !/icon|logo|badge|avatar|pixel|tracking|\.gif$|1x1|\.svg/i.test(src) &&
+              (width === 0 || width > 100) && 
+              (height === 0 || height > 100)) {
+            imageUrl = src;
+            break;
+          }
+        }
+        
+        // If we still don't have an image, just take the first one
+        if (!imageUrl && allImages.length > 0) {
+          imageUrl = allImages.first().attr('src') || 
+                    allImages.first().attr('data-src') || 
+                    allImages.first().attr('data-lazy-src');
+        }
       }
       
       // Create a unique ID

@@ -24,6 +24,7 @@ function isCacheStale(timestamp: Date): boolean {
 
 /**
  * Combines and deduplicates news items from multiple sources
+ * Also enhances items with fallback images if needed
  */
 function combineAndDeduplicate(items1: NewsItem[], items2: NewsItem[]): NewsItem[] {
   const combined = [...items1, ...items2];
@@ -31,10 +32,76 @@ function combineAndDeduplicate(items1: NewsItem[], items2: NewsItem[]): NewsItem
   
   // Use Map to deduplicate by ID
   combined.forEach(item => {
+    // Add fallback image if the item doesn't have one
+    if (!item.imageUrl) {
+      item.imageUrl = getFallbackImage(item.category, item.title);
+    }
+    
+    // Fix relative image URLs
+    if (item.imageUrl && item.imageUrl.startsWith('/')) {
+      try {
+        const urlObj = new URL(item.url);
+        item.imageUrl = `${urlObj.protocol}//${urlObj.host}${item.imageUrl}`;
+      } catch (e) {
+        // Keep original if URL parsing fails
+      }
+    }
+    
     uniqueMap.set(item.id, item);
   });
   
   return Array.from(uniqueMap.values());
+}
+
+/**
+ * Provides a fallback image URL based on the content category and title
+ */
+function getFallbackImage(category: string, title: string): string {
+  // Base set of high-quality fallback images by category
+  const fallbackImages: Record<string, string[]> = {
+    technology: [
+      'https://images.unsplash.com/photo-1518770660439-4636190af475',
+      'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
+      'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5'
+    ],
+    business: [
+      'https://images.unsplash.com/photo-1507679799987-c73779587ccf',
+      'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a',
+      'https://images.unsplash.com/photo-1556761175-b413da4baf72'
+    ],
+    design: [
+      'https://images.unsplash.com/photo-1561069934-eee225952461',
+      'https://images.unsplash.com/photo-1523726491678-bf852e717f6a',
+      'https://images.unsplash.com/photo-1618004912476-29818d81ae2e'
+    ],
+    science: [
+      'https://images.unsplash.com/photo-1564325724739-bae0bd08762c',
+      'https://images.unsplash.com/photo-1532094349884-543bc11b234d',
+      'https://images.unsplash.com/photo-1582719471384-894fbb16e074'
+    ],
+    ai: [
+      'https://images.unsplash.com/photo-1677442135073-d853d01457a9',
+      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485',
+      'https://images.unsplash.com/photo-1620330009516-5fcf8c2000c9'
+    ],
+    news: [
+      'https://images.unsplash.com/photo-1504711434969-e33886168f5c',
+      'https://images.unsplash.com/photo-1495020689067-958852a7765e',
+      'https://images.unsplash.com/photo-1528747045269-390fe33c19f2'
+    ]
+  };
+  
+  // Default category if not found
+  const defaultCategory = 'news';
+  
+  // Get the appropriate list of images
+  const imageList = fallbackImages[category] || fallbackImages[defaultCategory];
+  
+  // Use title to pick a consistent image from the list
+  const titleHash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const index = titleHash % imageList.length;
+  
+  return imageList[index];
 }
 
 /**
