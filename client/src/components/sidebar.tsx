@@ -41,8 +41,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         animate={{ x: isMobile && !isOpen ? -300 : 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className={cn(
-          "w-72 bg-background/80 backdrop-blur-xl rounded-r-2xl shadow-xl fixed inset-y-0 left-0 z-40",
-          "md:relative border-r border-border/30"
+          "w-72 dark:bg-[#0c111d]/70 dark:backdrop-blur-xl rounded-r-2xl shadow-xl fixed inset-y-0 left-0 z-40",
+          "md:relative border-r border-border/20 dark:border-primary/10 glass-panel"
         )}
       >
         <div className="flex flex-col h-full">
@@ -79,8 +79,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={cn(
                       "flex items-center p-3 rounded-lg font-medium transition-all",
                       location === "/"
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-muted text-foreground"
+                        ? "bg-primary text-white shadow-md shadow-primary/30 dark:shadow-primary/40 dark:border border-primary/10"
+                        : "hover:bg-muted text-foreground dark:hover:bg-primary/10 dark:hover:text-white"
                     )}
                   >
                     <i className="ri-home-line mr-3 text-lg"></i>
@@ -99,8 +99,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={cn(
                       "flex items-center p-3 rounded-lg font-medium transition-all",
                       location === "/favorites"
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-muted text-foreground"
+                        ? "bg-primary text-white shadow-md shadow-primary/30 dark:shadow-primary/40 dark:border border-primary/10"
+                        : "hover:bg-muted text-foreground dark:hover:bg-primary/10 dark:hover:text-white"
                     )}
                   >
                     <i className="ri-star-line mr-3 text-lg"></i>
@@ -119,8 +119,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={cn(
                       "flex items-center p-3 rounded-lg font-medium transition-all",
                       location === "/latest"
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "hover:bg-muted text-foreground"
+                        ? "bg-primary text-white shadow-md shadow-primary/30 dark:shadow-primary/40 dark:border border-primary/10"
+                        : "hover:bg-muted text-foreground dark:hover:bg-primary/10 dark:hover:text-white"
                     )}
                   >
                     <i className="ri-rocket-line mr-3 text-lg"></i>
@@ -145,8 +145,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     className={cn(
                       "flex items-center p-3 rounded-lg font-medium transition-all",
                       location === "/technology"
-                        ? "text-green-500 bg-green-500/10"
-                        : "hover:bg-muted text-foreground"
+                        ? "text-green-500 bg-green-500/10 dark:bg-green-950/30 dark:shadow-sm dark:shadow-green-500/10"
+                        : "hover:bg-muted text-foreground dark:hover:bg-accent/30"
                     )}
                   >
                     <i className="ri-code-box-line mr-3 text-lg text-green-500"></i>
@@ -273,7 +273,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <Link
                           href={`/folders/${folder.id}`}
                           onClick={() => isMobile && onClose()}
-                          className="flex items-center p-2.5 px-3 rounded-lg text-foreground hover:bg-muted transition-colors"
+                          className="flex items-center p-2.5 px-3 rounded-lg text-foreground hover:bg-muted dark:hover:bg-primary/5 transition-all"
                         >
                           <div 
                             className="w-7 h-7 rounded-md flex items-center justify-center mr-2.5"
