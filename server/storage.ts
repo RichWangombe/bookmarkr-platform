@@ -7,6 +7,8 @@ import {
   type BookmarkTag, type InsertBookmarkTag,
   type BookmarkWithTags, type FolderWithCount
 } from "@shared/schema";
+import { db } from "./db";
+import { and, eq, ilike, or, sql, count, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -45,269 +47,310 @@ export interface IStorage {
   getBookmarksForTag(tagId: number): Promise<Bookmark[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private bookmarks: Map<number, Bookmark>;
-  private folders: Map<number, Folder>;
-  private tags: Map<number, Tag>;
-  private bookmarkTags: Map<number, BookmarkTag>;
-  
-  private userIdCounter: number;
-  private bookmarkIdCounter: number;
-  private folderIdCounter: number;
-  private tagIdCounter: number;
-  private bookmarkTagIdCounter: number;
-  
-  constructor() {
-    this.users = new Map();
-    this.bookmarks = new Map();
-    this.folders = new Map();
-    this.tags = new Map();
-    this.bookmarkTags = new Map();
-    
-    this.userIdCounter = 1;
-    this.bookmarkIdCounter = 1;
-    this.folderIdCounter = 1;
-    this.tagIdCounter = 1;
-    this.bookmarkTagIdCounter = 1;
-    
-    // Initialize with some default folders
-    this.createFolder({ name: "Development", color: "#4A90E2" });
-    this.createFolder({ name: "Design Inspiration", color: "#6C63FF" });
-    this.createFolder({ name: "Articles to Read", color: "#4CAF50" });
-    
-    // Initialize with some default tags
-    this.createTag({ name: "javascript" });
-    this.createTag({ name: "design" });
-    this.createTag({ name: "productivity" });
-    this.createTag({ name: "learning" });
-    this.createTag({ name: "inspiration" });
-    this.createTag({ name: "technology" });
-    this.createTag({ name: "programming" });
-  }
-  
-  // User operations
+// Implementation of IStorage using a PostgreSQL database
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
-  
+
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
-  
-  // Bookmark operations
+
   async getAllBookmarks(): Promise<BookmarkWithTags[]> {
-    const bookmarks = Array.from(this.bookmarks.values());
-    return Promise.all(bookmarks.map(bookmark => this.enrichBookmark(bookmark)));
+    const result = await db.query.bookmarks.findMany({
+      with: {
+        folder: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+    });
+    
+    return result.map((bookmark) => ({
+      ...bookmark,
+      tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+    }));
   }
-  
+
   async getBookmarkById(id: number): Promise<BookmarkWithTags | undefined> {
-    const bookmark = this.bookmarks.get(id);
+    const bookmark = await db.query.bookmarks.findFirst({
+      where: eq(bookmarks.id, id),
+      with: {
+        folder: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+    });
+    
     if (!bookmark) return undefined;
-    return this.enrichBookmark(bookmark);
+    
+    return {
+      ...bookmark,
+      tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+    };
   }
-  
+
   async getBookmarksByFolder(folderId: number | null): Promise<BookmarkWithTags[]> {
-    const bookmarks = Array.from(this.bookmarks.values())
-      .filter(bookmark => 
-        folderId === null 
-          ? bookmark.folderId === undefined || bookmark.folderId === null
-          : bookmark.folderId === folderId
-      );
+    let query;
     
-    return Promise.all(bookmarks.map(bookmark => this.enrichBookmark(bookmark)));
+    if (folderId === null) {
+      query = isNull(bookmarks.folderId);
+    } else {
+      query = eq(bookmarks.folderId, folderId);
+    }
+    
+    const result = await db.query.bookmarks.findMany({
+      where: query,
+      with: {
+        folder: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+    });
+    
+    return result.map((bookmark) => ({
+      ...bookmark,
+      tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+    }));
   }
-  
+
   async getBookmarksByTag(tagId: number): Promise<BookmarkWithTags[]> {
-    const bookmarkIds = Array.from(this.bookmarkTags.values())
-      .filter(bt => bt.tagId === tagId)
-      .map(bt => bt.bookmarkId);
+    const result = await db.query.bookmarks.findMany({
+      with: {
+        folder: true,
+        tags: {
+          where: eq(bookmarkTags.tagId, tagId),
+          with: {
+            tag: true,
+          },
+        },
+      },
+    });
     
-    const bookmarks = bookmarkIds
-      .map(id => this.bookmarks.get(id))
-      .filter(bookmark => bookmark !== undefined) as Bookmark[];
-    
-    return Promise.all(bookmarks.map(bookmark => this.enrichBookmark(bookmark)));
+    return result.filter(bookmark => bookmark.tags.length > 0).map((bookmark) => ({
+      ...bookmark,
+      tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+    }));
   }
-  
+
   async getFavoriteBookmarks(): Promise<BookmarkWithTags[]> {
-    const bookmarks = Array.from(this.bookmarks.values())
-      .filter(bookmark => bookmark.favorite);
+    const result = await db.query.bookmarks.findMany({
+      where: eq(bookmarks.favorite, true),
+      with: {
+        folder: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
+    });
     
-    return Promise.all(bookmarks.map(bookmark => this.enrichBookmark(bookmark)));
+    return result.map((bookmark) => ({
+      ...bookmark,
+      tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+    }));
   }
-  
+
   async createBookmark(insertBookmark: InsertBookmark): Promise<Bookmark> {
-    const id = this.bookmarkIdCounter++;
-    const now = new Date();
-    const bookmark: Bookmark = { ...insertBookmark, id, createdAt: now };
-    this.bookmarks.set(id, bookmark);
+    const [bookmark] = await db
+      .insert(bookmarks)
+      .values(insertBookmark)
+      .returning();
     return bookmark;
   }
-  
-  async updateBookmark(id: number, bookmark: Partial<InsertBookmark>): Promise<Bookmark | undefined> {
-    const existingBookmark = this.bookmarks.get(id);
-    if (!existingBookmark) return undefined;
+
+  async updateBookmark(id: number, updateData: Partial<InsertBookmark>): Promise<Bookmark | undefined> {
+    const [updatedBookmark] = await db
+      .update(bookmarks)
+      .set(updateData)
+      .where(eq(bookmarks.id, id))
+      .returning();
     
-    const updatedBookmark = { ...existingBookmark, ...bookmark };
-    this.bookmarks.set(id, updatedBookmark);
-    return updatedBookmark;
+    return updatedBookmark || undefined;
   }
-  
+
   async deleteBookmark(id: number): Promise<boolean> {
-    // Delete associated bookmark tags
-    const bookmarkTagsToDelete = Array.from(this.bookmarkTags.values())
-      .filter(bt => bt.bookmarkId === id);
+    const [deletedBookmark] = await db
+      .delete(bookmarks)
+      .where(eq(bookmarks.id, id))
+      .returning();
     
-    for (const bt of bookmarkTagsToDelete) {
-      this.bookmarkTags.delete(bt.id);
-    }
-    
-    return this.bookmarks.delete(id);
+    return !!deletedBookmark;
   }
-  
+
   async searchBookmarks(query: string): Promise<BookmarkWithTags[]> {
-    if (!query) return this.getAllBookmarks();
+    const searchTerm = `%${query}%`;
     
-    const normalizedQuery = query.toLowerCase();
-    const bookmarks = Array.from(this.bookmarks.values())
-      .filter(bookmark => 
-        bookmark.title.toLowerCase().includes(normalizedQuery) ||
-        (bookmark.description?.toLowerCase().includes(normalizedQuery)) ||
-        bookmark.url.toLowerCase().includes(normalizedQuery)
-      );
-    
-    return Promise.all(bookmarks.map(bookmark => this.enrichBookmark(bookmark)));
-  }
-  
-  // Folder operations
-  async getAllFolders(): Promise<FolderWithCount[]> {
-    const folders = Array.from(this.folders.values());
-    
-    return folders.map(folder => {
-      const count = Array.from(this.bookmarks.values())
-        .filter(bookmark => bookmark.folderId === folder.id)
-        .length;
-      
-      return { ...folder, count };
+    const result = await db.query.bookmarks.findMany({
+      where: or(
+        ilike(bookmarks.title, searchTerm),
+        ilike(bookmarks.description || "", searchTerm),
+        ilike(bookmarks.url, searchTerm)
+      ),
+      with: {
+        folder: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
+      },
     });
+    
+    return result.map((bookmark) => ({
+      ...bookmark,
+      tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+    }));
   }
-  
+
+  async getAllFolders(): Promise<FolderWithCount[]> {
+    const foldersWithCount = await db
+      .select({
+        id: folders.id,
+        name: folders.name,
+        color: folders.color,
+        count: count(bookmarks.id).as('count')
+      })
+      .from(folders)
+      .leftJoin(bookmarks, eq(folders.id, bookmarks.folderId))
+      .groupBy(folders.id)
+      .orderBy(folders.name);
+    
+    return foldersWithCount.map(folder => ({
+      ...folder,
+      count: Number(folder.count), // Ensure count is a number
+    }));
+  }
+
   async getFolderById(id: number): Promise<Folder | undefined> {
-    return this.folders.get(id);
+    const [folder] = await db.select().from(folders).where(eq(folders.id, id));
+    return folder || undefined;
   }
-  
+
   async createFolder(insertFolder: InsertFolder): Promise<Folder> {
-    const id = this.folderIdCounter++;
-    const folder: Folder = { ...insertFolder, id };
-    this.folders.set(id, folder);
+    const [folder] = await db
+      .insert(folders)
+      .values(insertFolder)
+      .returning();
     return folder;
   }
-  
-  async updateFolder(id: number, folder: Partial<InsertFolder>): Promise<Folder | undefined> {
-    const existingFolder = this.folders.get(id);
-    if (!existingFolder) return undefined;
+
+  async updateFolder(id: number, updateData: Partial<InsertFolder>): Promise<Folder | undefined> {
+    const [updatedFolder] = await db
+      .update(folders)
+      .set(updateData)
+      .where(eq(folders.id, id))
+      .returning();
     
-    const updatedFolder = { ...existingFolder, ...folder };
-    this.folders.set(id, updatedFolder);
-    return updatedFolder;
+    return updatedFolder || undefined;
   }
-  
+
   async deleteFolder(id: number): Promise<boolean> {
-    // Update bookmarks in this folder to have no folder
-    for (const [bookmarkId, bookmark] of this.bookmarks.entries()) {
-      if (bookmark.folderId === id) {
-        const updatedBookmark = { ...bookmark, folderId: null };
-        this.bookmarks.set(bookmarkId, updatedBookmark);
-      }
-    }
+    // First update any bookmarks that refer to this folder to have null folderId
+    await db
+      .update(bookmarks)
+      .set({ folderId: null })
+      .where(eq(bookmarks.folderId, id));
     
-    return this.folders.delete(id);
+    const [deletedFolder] = await db
+      .delete(folders)
+      .where(eq(folders.id, id))
+      .returning();
+    
+    return !!deletedFolder;
   }
-  
-  // Tag operations
+
   async getAllTags(): Promise<Tag[]> {
-    return Array.from(this.tags.values());
+    return db.select().from(tags).orderBy(tags.name);
   }
-  
+
   async getTagById(id: number): Promise<Tag | undefined> {
-    return this.tags.get(id);
+    const [tag] = await db.select().from(tags).where(eq(tags.id, id));
+    return tag || undefined;
   }
-  
+
   async getTagByName(name: string): Promise<Tag | undefined> {
-    return Array.from(this.tags.values())
-      .find(tag => tag.name.toLowerCase() === name.toLowerCase());
+    const [tag] = await db.select().from(tags).where(eq(tags.name, name));
+    return tag || undefined;
   }
-  
+
   async createTag(insertTag: InsertTag): Promise<Tag> {
-    const id = this.tagIdCounter++;
-    const tag: Tag = { ...insertTag, id };
-    this.tags.set(id, tag);
+    const [tag] = await db
+      .insert(tags)
+      .values(insertTag)
+      .returning();
     return tag;
   }
-  
-  // BookmarkTag operations
+
   async addTagToBookmark(bookmarkId: number, tagId: number): Promise<void> {
-    // Check if association already exists
-    const exists = Array.from(this.bookmarkTags.values())
-      .some(bt => bt.bookmarkId === bookmarkId && bt.tagId === tagId);
+    // Check if the relationship already exists
+    const [existingRelation] = await db
+      .select()
+      .from(bookmarkTags)
+      .where(and(
+        eq(bookmarkTags.bookmarkId, bookmarkId),
+        eq(bookmarkTags.tagId, tagId)
+      ));
     
-    if (!exists) {
-      const id = this.bookmarkTagIdCounter++;
-      const bookmarkTag: BookmarkTag = { id, bookmarkId, tagId };
-      this.bookmarkTags.set(id, bookmarkTag);
+    if (!existingRelation) {
+      await db
+        .insert(bookmarkTags)
+        .values({ bookmarkId, tagId });
     }
   }
-  
+
   async removeTagFromBookmark(bookmarkId: number, tagId: number): Promise<void> {
-    const bookmarkTagToDelete = Array.from(this.bookmarkTags.values())
-      .find(bt => bt.bookmarkId === bookmarkId && bt.tagId === tagId);
-    
-    if (bookmarkTagToDelete) {
-      this.bookmarkTags.delete(bookmarkTagToDelete.id);
-    }
+    await db
+      .delete(bookmarkTags)
+      .where(and(
+        eq(bookmarkTags.bookmarkId, bookmarkId),
+        eq(bookmarkTags.tagId, tagId)
+      ));
   }
-  
+
   async getTagsForBookmark(bookmarkId: number): Promise<Tag[]> {
-    const tagIds = Array.from(this.bookmarkTags.values())
-      .filter(bt => bt.bookmarkId === bookmarkId)
-      .map(bt => bt.tagId);
+    const result = await db
+      .select({
+        tag: tags
+      })
+      .from(bookmarkTags)
+      .where(eq(bookmarkTags.bookmarkId, bookmarkId))
+      .innerJoin(tags, eq(bookmarkTags.tagId, tags.id));
     
-    return tagIds
-      .map(id => this.tags.get(id))
-      .filter(tag => tag !== undefined) as Tag[];
+    return result.map(row => row.tag);
   }
-  
+
   async getBookmarksForTag(tagId: number): Promise<Bookmark[]> {
-    const bookmarkIds = Array.from(this.bookmarkTags.values())
-      .filter(bt => bt.tagId === tagId)
-      .map(bt => bt.bookmarkId);
+    const result = await db
+      .select({
+        bookmark: bookmarks
+      })
+      .from(bookmarkTags)
+      .where(eq(bookmarkTags.tagId, tagId))
+      .innerJoin(bookmarks, eq(bookmarkTags.bookmarkId, bookmarks.id));
     
-    return bookmarkIds
-      .map(id => this.bookmarks.get(id))
-      .filter(bookmark => bookmark !== undefined) as Bookmark[];
-  }
-  
-  // Helper methods
-  private async enrichBookmark(bookmark: Bookmark): Promise<BookmarkWithTags> {
-    const tags = await this.getTagsForBookmark(bookmark.id);
-    let folder: Folder | undefined;
-    
-    if (bookmark.folderId) {
-      folder = await this.getFolderById(bookmark.folderId);
-    }
-    
-    return { ...bookmark, tags, folder };
+    return result.map(row => row.bookmark);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

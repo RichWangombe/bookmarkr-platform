@@ -1,16 +1,19 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
+// Table definitions
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const folders = pgTable("folders", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
 });
 
 export const bookmarks = pgTable("bookmarks", {
@@ -21,23 +24,8 @@ export const bookmarks = pgTable("bookmarks", {
   thumbnailUrl: text("thumbnail_url"),
   domain: text("domain"),
   favorite: boolean("favorite").default(false),
-  folderId: integer("folder_id"),
+  folderId: integer("folder_id").references(() => folders.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const folders = pgTable("folders", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  color: text("color").notNull(),
-});
-
-export const insertFolderSchema = createInsertSchema(folders).omit({
-  id: true,
 });
 
 export const tags = pgTable("tags", {
@@ -45,19 +33,65 @@ export const tags = pgTable("tags", {
   name: text("name").notNull().unique(),
 });
 
+export const bookmarkTags = pgTable("bookmark_tags", {
+  bookmarkId: integer("bookmark_id").notNull().references(() => bookmarks.id, { onDelete: "cascade" }),
+  tagId: integer("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.bookmarkId, t.tagId] }),
+}));
+
+// Relation definitions
+export const usersRelations = relations(users, ({ many }) => ({
+  bookmarks: many(bookmarks),
+}));
+
+export const foldersRelations = relations(folders, ({ many }) => ({
+  bookmarks: many(bookmarks),
+}));
+
+export const bookmarksRelations = relations(bookmarks, ({ one, many }) => ({
+  folder: one(folders, {
+    fields: [bookmarks.folderId],
+    references: [folders.id],
+  }),
+  tags: many(bookmarkTags),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  bookmarks: many(bookmarkTags),
+}));
+
+export const bookmarkTagsRelations = relations(bookmarkTags, ({ one }) => ({
+  bookmark: one(bookmarks, {
+    fields: [bookmarkTags.bookmarkId],
+    references: [bookmarks.id],
+  }),
+  tag: one(tags, {
+    fields: [bookmarkTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
+export const insertFolderSchema = createInsertSchema(folders).omit({
+  id: true,
+});
+
+export const insertBookmarkSchema = createInsertSchema(bookmarks).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTagSchema = createInsertSchema(tags).omit({
   id: true,
 });
 
-export const bookmarkTags = pgTable("bookmark_tags", {
-  id: serial("id").primaryKey(),
-  bookmarkId: integer("bookmark_id").notNull(),
-  tagId: integer("tag_id").notNull(),
-});
-
-export const insertBookmarkTagSchema = createInsertSchema(bookmarkTags).omit({
-  id: true,
-});
+export const insertBookmarkTagSchema = createInsertSchema(bookmarkTags);
 
 // Types
 export type User = typeof users.$inferSelect;
