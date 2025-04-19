@@ -114,6 +114,12 @@ export type BookmarkWithTags = Bookmark & {
   tags: Tag[];
   folder?: Folder;
   imageUrl?: string; // For articles from RSS/crawler with image URLs
+  category?: string; // For categorizing news articles
+  source?: {
+    id: string;
+    name: string;
+    iconUrl?: string;
+  }; // Source info for news articles
 };
 
 export type FolderWithCount = Folder & {
