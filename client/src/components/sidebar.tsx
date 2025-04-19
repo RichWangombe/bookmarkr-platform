@@ -41,21 +41,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         animate={{ x: isMobile && !isOpen ? -300 : 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className={cn(
-          "w-64 bg-background/80 backdrop-blur-xl rounded-r-2xl shadow-xl fixed inset-y-0 left-0 z-40",
+          "w-72 bg-background/80 backdrop-blur-xl rounded-r-2xl shadow-xl fixed inset-y-0 left-0 z-40",
           "md:relative border-r border-border/30"
         )}
       >
         <div className="flex flex-col h-full">
           <div className="p-5 border-b border-border/20">
             <motion.h1 
-              className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center"
+              className="text-xl font-bold text-foreground flex items-center mb-1"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <i className="ri-bookmark-line mr-2 text-primary"></i>
-              Bookmarkr
+              <span className="text-primary">B</span>ookmarkr<span className="text-primary">News</span>
             </motion.h1>
+            <motion.p
+              className="text-sm text-muted-foreground"
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              Your personal news aggregator
+            </motion.p>
           </div>
 
           <ScrollArea className="flex-1 overflow-y-auto">
@@ -70,14 +77,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     href="/"
                     onClick={() => isMobile && onClose()}
                     className={cn(
-                      "flex items-center p-3 rounded-xl font-medium transition-all",
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
                       location === "/"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
                         : "hover:bg-muted text-foreground"
                     )}
                   >
-                    <i className="ri-dashboard-line mr-3 text-lg"></i>
-                    Dashboard
+                    <i className="ri-home-line mr-3 text-lg"></i>
+                    For You
                   </Link>
                 </motion.div>
                 
@@ -90,7 +97,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     href="/favorites"
                     onClick={() => isMobile && onClose()}
                     className={cn(
-                      "flex items-center p-3 rounded-xl font-medium transition-all",
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
                       location === "/favorites"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
                         : "hover:bg-muted text-foreground"
@@ -107,19 +114,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   transition={{ delay: 0.25 }}
                 >
                   <Link
-                    href="/tags"
+                    href="/latest"
                     onClick={() => isMobile && onClose()}
                     className={cn(
-                      "flex items-center p-3 rounded-xl font-medium transition-all",
-                      location === "/tags"
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/latest"
                         ? "bg-primary text-white shadow-md shadow-primary/20"
                         : "hover:bg-muted text-foreground"
                     )}
                   >
-                    <i className="ri-price-tag-3-line mr-3 text-lg"></i>
-                    Tags
+                    <i className="ri-rocket-line mr-3 text-lg"></i>
+                    Latest
                   </Link>
                 </motion.div>
+                
+                <div className="pt-2 pb-1">
+                  <h3 className="text-xs font-semibold text-muted-foreground tracking-wider px-3 mb-2">
+                    CATEGORIES
+                  </h3>
+                </div>
                 
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
@@ -127,17 +140,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   transition={{ delay: 0.3 }}
                 >
                   <Link
-                    href="/folders"
+                    href="/technology"
                     onClick={() => isMobile && onClose()}
                     className={cn(
-                      "flex items-center p-3 rounded-xl font-medium transition-all",
-                      location === "/folders"
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/technology"
+                        ? "text-green-500 bg-green-500/10"
                         : "hover:bg-muted text-foreground"
                     )}
                   >
-                    <i className="ri-folder-line mr-3 text-lg"></i>
-                    Folders
+                    <i className="ri-code-box-line mr-3 text-lg text-green-500"></i>
+                    Technology
                   </Link>
                 </motion.div>
                 
@@ -147,17 +160,77 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   transition={{ delay: 0.35 }}
                 >
                   <Link
-                    href="/discover"
+                    href="/design"
                     onClick={() => isMobile && onClose()}
                     className={cn(
-                      "flex items-center p-3 rounded-xl font-medium transition-all",
-                      location === "/discover"
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/design"
+                        ? "text-orange-500 bg-orange-500/10"
                         : "hover:bg-muted text-foreground"
                     )}
                   >
-                    <i className="ri-compass-line mr-3 text-lg"></i>
-                    Discover
+                    <i className="ri-paint-brush-line mr-3 text-lg text-orange-500"></i>
+                    Design
+                  </Link>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link
+                    href="/business"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/business"
+                        ? "text-blue-500 bg-blue-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-briefcase-line mr-3 text-lg text-blue-500"></i>
+                    Business
+                  </Link>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <Link
+                    href="/ai"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/ai"
+                        ? "text-purple-500 bg-purple-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-robot-line mr-3 text-lg text-purple-500"></i>
+                    AI & ML
+                  </Link>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Link
+                    href="/science"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/science"
+                        ? "text-teal-500 bg-teal-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-flask-line mr-3 text-lg text-teal-500"></i>
+                    Science
                   </Link>
                 </motion.div>
               </div>

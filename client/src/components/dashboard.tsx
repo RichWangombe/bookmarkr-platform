@@ -13,7 +13,7 @@ interface DashboardProps {
 
 export function Dashboard({ searchQuery = "" }: DashboardProps) {
   const [sortBy, setSortBy] = useState("date");
-  const [viewMode, setViewMode] = useState("magazine");
+  const [viewMode, setViewMode] = useState("news");
   const [bookmarkToEdit, setBookmarkToEdit] = useState<BookmarkWithTags | null>(null);
 
   const { data: bookmarks, isLoading, error } = useQuery({
@@ -68,6 +68,14 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
           </div>
           
           <div className="flex bg-background/80 rounded-md shadow-sm border border-border/30 backdrop-blur-sm">
+            <Button
+              variant={viewMode === 'news' ? 'default' : 'ghost'}
+              size="sm"
+              className={`px-3 py-1 flex items-center justify-center ${viewMode === 'news' ? 'text-primary' : 'text-muted-foreground'} border-r border-border/30`}
+              onClick={() => setViewMode('news')}
+            >
+              <i className="ri-article-line"></i>
+            </Button>
             <Button
               variant={viewMode === 'magazine' ? 'default' : 'ghost'}
               size="sm"
@@ -129,7 +137,137 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
         </div>
       ) : (
         <>
-          {viewMode === 'magazine' ? (
+          {viewMode === 'news' ? (
+            <div className="space-y-8">
+              {/* Top Stories Section */}
+              {sortedBookmarks.length > 0 && (
+                <section>
+                  <div className="flex items-center mb-4">
+                    <h2 className="text-xl font-semibold border-l-4 border-primary pl-3">Top Stories</h2>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Main Featured Story */}
+                    <div className="lg:col-span-6 xl:col-span-7">
+                      <BookmarkCard 
+                        key={sortedBookmarks[0].id} 
+                        bookmark={sortedBookmarks[0]} 
+                        onEdit={handleEditBookmark}
+                        size="large"
+                      />
+                    </div>
+                    
+                    {/* Secondary Stories - Right Column */}
+                    <div className="lg:col-span-6 xl:col-span-5">
+                      <div className="flex flex-col gap-2">
+                        {sortedBookmarks.slice(1, 4).map((bookmark: BookmarkWithTags, index) => (
+                          <BookmarkCard 
+                            key={bookmark.id} 
+                            bookmark={bookmark} 
+                            onEdit={handleEditBookmark}
+                            variant="list"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+              
+              {/* Latest Articles Section */}
+              {sortedBookmarks.length > 4 && (
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold border-l-4 border-blue-500 pl-3">Latest Articles</h2>
+                    <Button variant="ghost" className="text-sm">View all <i className="ri-arrow-right-line ml-1"></i></Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {sortedBookmarks.slice(4, 8).map((bookmark: BookmarkWithTags) => (
+                      <BookmarkCard 
+                        key={bookmark.id} 
+                        bookmark={bookmark} 
+                        onEdit={handleEditBookmark}
+                        size="medium"
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+              
+              {/* Topic-based Sections */}
+              {sortedBookmarks.length > 8 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Technology Section */}
+                  <section>
+                    <div className="flex items-center mb-4">
+                      <h2 className="text-xl font-semibold border-l-4 border-green-500 pl-3">Technology</h2>
+                    </div>
+                    <div className="space-y-3">
+                      <BookmarkCard 
+                        key={sortedBookmarks[8].id} 
+                        bookmark={sortedBookmarks[8]} 
+                        onEdit={handleEditBookmark}
+                        variant="list"
+                      />
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        {sortedBookmarks.slice(9, 11).map((bookmark: BookmarkWithTags) => (
+                          <BookmarkCard 
+                            key={bookmark.id} 
+                            bookmark={bookmark} 
+                            onEdit={handleEditBookmark}
+                            size="small"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                  
+                  {/* Design Section */}
+                  <section>
+                    <div className="flex items-center mb-4">
+                      <h2 className="text-xl font-semibold border-l-4 border-orange-500 pl-3">Design</h2>
+                    </div>
+                    <div className="space-y-3">
+                      <BookmarkCard 
+                        key={sortedBookmarks[11]?.id || sortedBookmarks[8].id} 
+                        bookmark={sortedBookmarks[11] || sortedBookmarks[8]} 
+                        onEdit={handleEditBookmark}
+                        variant="list"
+                      />
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        {(sortedBookmarks.slice(12, 14).length > 0 ? sortedBookmarks.slice(12, 14) : sortedBookmarks.slice(9, 11)).map((bookmark: BookmarkWithTags) => (
+                          <BookmarkCard 
+                            key={bookmark.id} 
+                            bookmark={bookmark} 
+                            onEdit={handleEditBookmark}
+                            size="small"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              )}
+              
+              {/* For You Section */}
+              {sortedBookmarks.length > 14 && (
+                <section>
+                  <div className="flex items-center mb-4">
+                    <h2 className="text-xl font-semibold border-l-4 border-purple-500 pl-3">For You</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {sortedBookmarks.slice(14).map((bookmark: BookmarkWithTags) => (
+                      <BookmarkCard 
+                        key={bookmark.id} 
+                        bookmark={bookmark} 
+                        onEdit={handleEditBookmark}
+                        size="medium"
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          ) : viewMode === 'magazine' ? (
             <div className="grid grid-cols-12 gap-4">
               {sortedBookmarks.length > 0 && (
                 <div className="col-span-12 md:col-span-8 lg:col-span-6">
