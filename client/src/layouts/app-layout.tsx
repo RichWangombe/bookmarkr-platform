@@ -39,8 +39,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
+    <div className="flex h-screen overflow-hidden dark:bg-gradient-to-br dark:from-[#0a0e17] dark:to-[#0f1525]">
+      {/* Sidebar with glass panel effect */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main content */}
@@ -50,7 +50,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           onSearch={handleSearch}
           searchQuery={searchQuery}
         />
-        <div className="flex-1">
+        <div className="flex-1 dark:bg-transparent">
           {children}
         </div>
       </main>

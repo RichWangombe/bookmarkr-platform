@@ -3,6 +3,66 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 222 90% 65%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 222 90% 65%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Enhanced dark theme with a deep blue-black base */
+    --background: 222 47% 4%;
+    --foreground: 210 20% 98%;
+    
+    /* Card and popover with subtle blue tint */
+    --card: 220 40% 5%;
+    --card-foreground: 210 20% 98%;
+    --popover: 220 40% 5%;
+    --popover-foreground: 210 20% 98%;
+    
+    /* Vibrant blue primary */
+    --primary: 222 90% 65%;
+    --primary-foreground: 210 20% 98%;
+    
+    /* Darker secondary tones */
+    --secondary: 220 25% 12%;
+    --secondary-foreground: 210 20% 98%;
+    
+    /* Refined muted colors */
+    --muted: 220 25% 10%;
+    --muted-foreground: 220 20% 70%;
+    
+    /* Accent with slight blue tint */
+    --accent: 222 30% 15%;
+    --accent-foreground: 210 20% 98%;
+    
+    /* Destructive red but more subdued */
+    --destructive: 0 62.8% 40%;
+    --destructive-foreground: 210 20% 98%;
+    
+    /* Borders and inputs slightly blue-tinted */
+    --border: 220 25% 12%;
+    --input: 220 25% 12%;
+    --ring: 222 90% 65%;
+  }
+  
   * {
     @apply border-border;
   }
@@ -10,6 +70,57 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+}
+
+/* Dark theme stylistic elements */
+.dark body {
+  background: linear-gradient(to bottom right, hsl(220, 40%, 3%), hsl(225, 40%, 6%));
+  min-height: 100vh;
+}
+
+.dark .bookmark-tile {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.dark .bookmark-tile:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px hsla(var(--primary), 0.2);
+  transform: translateY(-5px);
+}
+
+/* Refined scrollbar for dark theme */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(220, 25%, 8%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(222, 30%, 15%);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(222, 90%, 40%);
+}
+
+/* Subtle text and UI element glow effects */
+.dark h1, .dark h2, .dark h3 {
+  text-shadow: 0 0 10px hsla(var(--primary), 0.2);
+}
+
+.dark .primary-glow {
+  box-shadow: 0 0 15px hsla(var(--primary), 0.3);
+}
+
+/* Glass morphism effect for certain components */
+.dark .glass-panel {
+  background: hsla(220, 40%, 8%, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid hsla(var(--primary), 0.1);
 }
 
 @layer utilities {
