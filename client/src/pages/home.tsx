@@ -7,20 +7,20 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 md:p-6">
       <Tabs defaultValue="discover" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="discover">Discover</TabsTrigger>
-          <TabsTrigger value="dashboard">My Bookmarks</TabsTrigger>
-        </TabsList>
+        <div className="border-b sticky top-0 bg-background/95 backdrop-blur z-30 mb-3 pb-2">
+          <TabsList className="mb-1">
+            <TabsTrigger value="discover" className="text-base">News Feed</TabsTrigger>
+            <TabsTrigger value="dashboard" className="text-base">My Bookmarks</TabsTrigger>
+          </TabsList>
+        </div>
         
-        <TabsContent value="discover">
-          <h1 className="text-3xl font-bold mb-6">Discover</h1>
+        <TabsContent value="discover" className="mt-0">
           <Discover />
         </TabsContent>
         
-        <TabsContent value="dashboard">
-          <h1 className="text-3xl font-bold mb-6">My Bookmarks</h1>
+        <TabsContent value="dashboard" className="mt-0">
           <Dashboard searchQuery={searchQuery} />
         </TabsContent>
       </Tabs>
