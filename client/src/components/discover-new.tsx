@@ -86,9 +86,9 @@ export function Discover() {
     const bookmark: BookmarkWithTags = {
       id: parseInt(newsItem.id.split('-')[1], 10) || Math.floor(Math.random() * 10000),
       title: newsItem.title,
-      description: newsItem.description || null,
-      thumbnailUrl: newsItem.imageUrl || null,
-      imageUrl: newsItem.imageUrl || null,
+      description: newsItem.description || "",
+      thumbnailUrl: newsItem.imageUrl || undefined,
+      imageUrl: newsItem.imageUrl || undefined,
       url: newsItem.url,
       domain: domain,
       favorite: false,

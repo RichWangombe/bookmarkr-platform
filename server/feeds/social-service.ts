@@ -141,7 +141,7 @@ async function fetchFromHackerNews(limit: number = 15): Promise<NewsItem[]> {
           title: story.title,
           description: `${story.score} points • ${story.descendants || 0} comments`,
           url: story.url,
-          imageUrl: null, // HN doesn't provide thumbnails
+          imageUrl: undefined, // HN doesn't provide thumbnails
           publishedAt: new Date(story.time * 1000),
           source: {
             id: 'hackernews',
@@ -194,7 +194,7 @@ async function fetchFromHackerNews(limit: number = 15): Promise<NewsItem[]> {
                 imageUrl = new URL(imageUrl, baseUrl.origin).toString();
               }
               
-              item.imageUrl = imageUrl || null;
+              item.imageUrl = imageUrl || undefined;
               
               // Try to get description if missing
               if (!item.description || item.description.includes('points')) {

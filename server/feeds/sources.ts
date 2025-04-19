@@ -518,9 +518,13 @@ export function getSourceById(id: string): NewsFeedSource | undefined {
 }
 
 export function getAvailableCategories(): string[] {
-  return [...new Set(newsSources.map(source => source.category))];
+  const categories = new Set<string>();
+  newsSources.forEach(source => categories.add(source.category));
+  return Array.from(categories);
 }
 
 export function getAvailableRegions(): string[] {
-  return [...new Set(newsSources.map(source => source.region))];
+  const regions = new Set<string>();
+  newsSources.forEach(source => regions.add(source.region));
+  return Array.from(regions);
 }
