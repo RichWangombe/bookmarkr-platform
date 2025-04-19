@@ -18,10 +18,12 @@ import {
   getSourcesByCategory 
 } from "./feeds";
 import suggestionsRouter from "./routes/suggestions";
+import recommendationsRouter from "./routes/recommendations";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Mount the suggestions router
+  // Mount the API routers
   app.use('/api/suggestions', suggestionsRouter);
+  app.use('/api/recommendations', recommendationsRouter);
   // Bookmarks API
   app.get("/api/bookmarks", async (req: Request, res: Response) => {
     const query = req.query.q as string | undefined;
