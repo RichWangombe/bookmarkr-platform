@@ -22,10 +22,12 @@ export const bookmarks = pgTable("bookmarks", {
   url: text("url").notNull(),
   description: text("description"),
   thumbnailUrl: text("thumbnail_url"),
+  imageUrl: text("image_url"),  // Added for consistency with BookmarkWithTags
   domain: text("domain"),
   favorite: boolean("favorite").default(false),
   folderId: integer("folder_id").references(() => folders.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const tags = pgTable("tags", {
@@ -110,17 +112,17 @@ export type BookmarkTag = typeof bookmarkTags.$inferSelect;
 export type InsertBookmarkTag = z.infer<typeof insertBookmarkTagSchema>;
 
 // Extended types for frontend use
-export type BookmarkWithTags = Bookmark & {
+export type BookmarkWithTags = Omit<Bookmark, 'updatedAt'> & {
   tags: Tag[];
   folder?: Folder;
-  imageUrl?: string; // For articles from RSS/crawler with image URLs
+  imageUrl?: string | null; // For articles from RSS/crawler with image URLs
   category?: string; // For categorizing news articles
   source?: {
     id: string;
     name: string;
     iconUrl?: string;
   }; // Source info for news articles
-  updatedAt: Date; // For news articles
+  updatedAt?: Date | null; // For news articles
 };
 
 export type FolderWithCount = Folder & {
