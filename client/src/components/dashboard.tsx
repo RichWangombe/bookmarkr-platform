@@ -13,7 +13,7 @@ interface DashboardProps {
 
 export function Dashboard({ searchQuery = "" }: DashboardProps) {
   const [sortBy, setSortBy] = useState("date");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("magazine");
   const [bookmarkToEdit, setBookmarkToEdit] = useState<BookmarkWithTags | null>(null);
 
   const { data: bookmarks, isLoading, error } = useQuery({
@@ -33,7 +33,10 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
 
   const sortedBookmarks = bookmarks ? [...bookmarks].sort((a: BookmarkWithTags, b: BookmarkWithTags) => {
     if (sortBy === 'date') {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      // Handle potential null dates by using a default date
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB.getTime() - dateA.getTime();
     } else if (sortBy === 'title') {
       return a.title.localeCompare(b.title);
     }
@@ -64,11 +67,19 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
             </Select>
           </div>
           
-          <div className="flex bg-white rounded-md shadow-sm border border-gray-200">
+          <div className="flex bg-background/80 rounded-md shadow-sm border border-border/30 backdrop-blur-sm">
+            <Button
+              variant={viewMode === 'magazine' ? 'default' : 'ghost'}
+              size="sm"
+              className={`px-3 py-1 flex items-center justify-center ${viewMode === 'magazine' ? 'text-primary' : 'text-muted-foreground'} border-r border-border/30`}
+              onClick={() => setViewMode('magazine')}
+            >
+              <i className="ri-newspaper-line"></i>
+            </Button>
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              className={`px-3 py-1 flex items-center justify-center ${viewMode === 'grid' ? 'text-primary' : 'text-text text-opacity-60'} border-r border-gray-200`}
+              className={`px-3 py-1 flex items-center justify-center ${viewMode === 'grid' ? 'text-primary' : 'text-muted-foreground'} border-r border-border/30`}
               onClick={() => setViewMode('grid')}
             >
               <i className="ri-layout-grid-line"></i>
@@ -76,7 +87,7 @@ export function Dashboard({ searchQuery = "" }: DashboardProps) {
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              className={`px-3 py-1 flex items-center justify-center ${viewMode === 'list' ? 'text-primary' : 'text-text text-opacity-60'}`}
+              className={`px-3 py-1 flex items-center justify-center ${viewMode === 'list' ? 'text-primary' : 'text-muted-foreground'}`}
               onClick={() => setViewMode('list')}
             >
               <i className="ri-list-check"></i>
