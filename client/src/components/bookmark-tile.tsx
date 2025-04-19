@@ -140,7 +140,7 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
     }
   };
 
-  // Visual tile model layout with hover effects
+  // Visual tile model layout with hover effects - minimalist approach
   return (
     <>
       <motion.div
@@ -148,53 +148,25 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className="h-full"
       >
-        <Card className={`bookmark-tile group relative overflow-hidden rounded-xl border-0 transition-all duration-300 hover:shadow-xl shadow-md bg-gradient-to-br from-black/80 to-black/50 backdrop-blur-md h-full ${getCategoryColor(bookmark.category)} hover:border-l-4 border-l border-l-transparent`}>
-          {/* Image background */}
-          <div className="absolute inset-0 w-full h-full">
+        <Card className={`bookmark-tile group relative overflow-hidden rounded-xl border-0 transition-all duration-300 hover:shadow-xl shadow-md h-full ${getCategoryColor(bookmark.category)} hover:border-l-2 border-l border-l-transparent`}>
+          {/* Pure image background */}
+          <div className="absolute inset-0 w-full h-full bg-black">
             <img 
               src={imageUrl} 
               alt={bookmark.title} 
-              className="w-full h-full object-cover opacity-90 transition-all duration-700 group-hover:scale-110 scale-100"
+              className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 scale-100"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
               }}
             />
-            {/* Gradient overlay for better text visibility - more opacity on hover */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
           </div>
           
-          {/* Source logo and badges at top */}
-          <div className="absolute top-3 left-3 flex items-center gap-2 z-10">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md p-1.5 flex items-center justify-center border border-white/10">
-              <img 
-                src={getBrowserIcon(domain)} 
-                alt={domain}
-                className="w-full h-full"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://www.google.com/favicon.ico';
-                }}
-              />
-            </div>
-            {bookmark.folder && (
-              <Badge 
-                variant="outline" 
-                className="bg-black/50 backdrop-blur-md text-xs font-medium shadow-sm border-opacity-50"
-                style={{ 
-                  borderColor: bookmark.folder.color,
-                  color: bookmark.folder.color,
-                }}
-              >
-                {bookmark.folder.name}
-              </Badge>
-            )}
-          </div>
-          
-          {/* Action buttons at top right */}
+          {/* Action buttons at top right - only visible on hover */}
           <div className="absolute top-3 right-3 flex space-x-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button 
               variant="ghost" 
               size="icon"
-              className="p-1.5 bg-black/50 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 transition-colors border border-white/10"
+              className="p-1.5 bg-black/60 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 transition-colors border border-white/10"
               onClick={handleToggleFavorite}
               disabled={toggleFavoriteMutation.isPending}
             >
@@ -214,7 +186,7 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  className="p-1.5 bg-black/50 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 transition-colors border border-white/10"
+                  className="p-1.5 bg-black/60 backdrop-blur-md rounded-full shadow-sm hover:bg-black/70 transition-colors border border-white/10"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <i className="ri-more-2-fill text-white/80"></i>
@@ -231,42 +203,61 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
             </DropdownMenu>
           </div>
           
-          {/* Content overlay that appears on hover */}
+          {/* Content overlay that ONLY appears on hover */}
           <a href={bookmark.url} target="_blank" rel="noopener noreferrer" className="block h-full">
             <div className={`${getAspectRatio()} relative z-0`}>
               {/* Invisible spacer div to maintain aspect ratio */}
               <div className="w-full h-full"></div>
               
-              {/* Content that appears on hover */}
-              <div className="absolute inset-0 flex flex-col justify-end p-4">
-                {/* Always visible title - fades on hover */}
-                <div className="opacity-100 group-hover:opacity-0 transition-opacity duration-300 absolute bottom-4 left-4 right-4">
-                  <h3 className={`font-bold text-white leading-tight drop-shadow-md ${size === 'large' ? 'text-xl' : size === 'small' ? 'text-sm' : 'text-base'}`}>
-                    {truncateText(bookmark.title, getTitleMaxLength())}
-                  </h3>
+              {/* Hover overlay with all text info */}
+              <div className="absolute inset-0 bg-black/70 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* Source info */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-black/70 backdrop-blur-md p-1 flex items-center justify-center border border-white/10">
+                    <img 
+                      src={getBrowserIcon(domain)} 
+                      alt={domain}
+                      className="w-full h-full"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://www.google.com/favicon.ico';
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs text-white/70">{domain}</span>
                 </div>
                 
-                {/* Content that only appears on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
-                  <h3 className={`font-bold text-white leading-tight ${size === 'large' ? 'text-xl' : size === 'small' ? 'text-sm' : 'text-base'}`}>
-                    {truncateText(bookmark.title, getTitleMaxLength())}
-                  </h3>
-                  
-                  {bookmark.description && (
-                    <p className="text-white/80 text-sm mt-2 line-clamp-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-in-out">
-                      {truncateText(bookmark.description, getDescriptionMaxLength())}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center text-xs text-white/70 mt-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-in-out delay-75">
-                    <span>{domain}</span>
-                    <span className="mx-1">•</span>
-                    <span>{formatDate(bookmark.createdAt)}</span>
-                  </div>
+                {/* Title and description */}
+                <h3 className={`font-medium text-white leading-tight ${size === 'large' ? 'text-xl' : size === 'small' ? 'text-sm' : 'text-base'}`}>
+                  {truncateText(bookmark.title, getTitleMaxLength())}
+                </h3>
+                
+                {bookmark.description && (
+                  <p className="text-white/70 text-xs mt-2 line-clamp-2">
+                    {truncateText(bookmark.description, getDescriptionMaxLength())}
+                  </p>
+                )}
+                
+                {/* Folder badge */}
+                {bookmark.folder && (
+                  <Badge 
+                    variant="outline" 
+                    className="mt-2 w-fit bg-black/50 backdrop-blur-md text-xs font-normal shadow-sm border-opacity-50"
+                    style={{ 
+                      borderColor: bookmark.folder.color,
+                      color: bookmark.folder.color,
+                    }}
+                  >
+                    {bookmark.folder.name}
+                  </Badge>
+                )}
+                
+                {/* Date and tags */}
+                <div className="flex justify-between items-end mt-2">
+                  <span className="text-xs text-white/50">{formatDate(bookmark.createdAt)}</span>
                   
                   {bookmark.tags && bookmark.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-in-out delay-100">
-                      {bookmark.tags.slice(0, 3).map(tag => (
+                    <div className="flex flex-wrap gap-1.5 justify-end">
+                      {bookmark.tags.slice(0, 2).map(tag => (
                         <Badge 
                           key={tag.id}
                           variant="secondary"
@@ -275,8 +266,8 @@ export function BookmarkTile({ bookmark, onEdit, size = 'medium' }: BookmarkTile
                           #{tag.name}
                         </Badge>
                       ))}
-                      {bookmark.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs text-white/80 border-white/20">+{bookmark.tags.length - 3}</Badge>
+                      {bookmark.tags.length > 2 && (
+                        <Badge variant="outline" className="text-xs text-white/80 border-white/20">+{bookmark.tags.length - 2}</Badge>
                       )}
                     </div>
                   )}
