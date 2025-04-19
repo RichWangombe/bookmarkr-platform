@@ -445,6 +445,74 @@ export const newsSources: NewsFeedSource[] = [
     type: 'rss'
   },
   
+  // Independent & Alternative Media
+  {
+    id: "intercept",
+    name: "The Intercept",
+    category: "news",
+    region: "global",
+    rssUrl: "https://theintercept.com/feed/",
+    websiteUrl: "https://theintercept.com",
+    iconUrl: "https://theintercept.com/favicon.ico",
+    requiresCrawling: false,
+    type: 'rss'
+  },
+  {
+    id: "substack",
+    name: "Substack Featured",
+    category: "news",
+    region: "global",
+    websiteUrl: "https://substack.com/featured",
+    crawlSelector: ".post-preview",
+    iconUrl: "https://substack.com/favicon.ico",
+    requiresCrawling: true,
+    type: 'rss'
+  },
+  {
+    id: "reason",
+    name: "Reason",
+    category: "news",
+    region: "global",
+    rssUrl: "https://reason.com/feed/",
+    websiteUrl: "https://reason.com",
+    iconUrl: "https://reason.com/favicon.ico",
+    requiresCrawling: false,
+    type: 'rss'
+  },
+  {
+    id: "quillette",
+    name: "Quillette",
+    category: "news",
+    region: "global",
+    rssUrl: "https://quillette.com/feed/",
+    websiteUrl: "https://quillette.com",
+    iconUrl: "https://quillette.com/favicon.ico",
+    requiresCrawling: false,
+    type: 'rss'
+  },
+  {
+    id: "unherd",
+    name: "UnHerd",
+    category: "news",
+    region: "global",
+    rssUrl: "https://unherd.com/feed/",
+    websiteUrl: "https://unherd.com",
+    iconUrl: "https://unherd.com/favicon.ico",
+    requiresCrawling: false,
+    type: 'rss'
+  },
+  {
+    id: "zerohedge",
+    name: "ZeroHedge",
+    category: "business",
+    region: "global",
+    rssUrl: "https://feeds.feedburner.com/zerohedge/feed",
+    websiteUrl: "https://www.zerohedge.com",
+    iconUrl: "https://www.zerohedge.com/favicon.ico",
+    requiresCrawling: false,
+    type: 'rss'
+  },
+  
   // Social/API Sources (will be used later)
   {
     id: "hackernews",
