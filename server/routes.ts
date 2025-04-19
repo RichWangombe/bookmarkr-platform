@@ -274,6 +274,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Bookmark Tags API
+  app.post("/api/bookmarks/:id/tags", async (req: Request, res: Response) => {
+    const bookmarkId = Number(req.params.id);
+    
+    try {
+      const { tagIds } = req.body;
+      
+      if (!tagIds || !Array.isArray(tagIds)) {
+        return res.status(400).json({ message: "tagIds array is required" });
+      }
+      
+      // Verify the bookmark exists
+      const bookmark = await storage.getBookmarkById(bookmarkId);
+      if (!bookmark) {
+        return res.status(404).json({ message: "Bookmark not found" });
+      }
+      
+      // Add each tag to the bookmark
+      for (const tagId of tagIds) {
+        await storage.addTagToBookmark(bookmarkId, tagId);
+      }
+      
+      // Get the updated bookmark with tags
+      const updatedBookmark = await storage.getBookmarkById(bookmarkId);
+      res.json(updatedBookmark);
+    } catch (error) {
+      console.error("Error adding tags to bookmark:", error);
+      res.status(500).json({ message: "Failed to add tags to bookmark" });
+    }
+  });
+  
+  app.delete("/api/bookmarks/:bookmarkId/tags/:tagId", async (req: Request, res: Response) => {
+    const bookmarkId = Number(req.params.bookmarkId);
+    const tagId = Number(req.params.tagId);
+    
+    try {
+      // Verify the bookmark exists
+      const bookmark = await storage.getBookmarkById(bookmarkId);
+      if (!bookmark) {
+        return res.status(404).json({ message: "Bookmark not found" });
+      }
+      
+      await storage.removeTagFromBookmark(bookmarkId, tagId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing tag from bookmark:", error);
+      res.status(500).json({ message: "Failed to remove tag from bookmark" });
+    }
+  });
+  
   // Metadata API
   app.post("/api/metadata", async (req: Request, res: Response) => {
     const schema = z.object({
