@@ -82,6 +82,7 @@ export class DatabaseStorage implements IStorage {
     return result.map((bookmark) => ({
       ...bookmark,
       tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+      folder: bookmark.folder || undefined
     }));
   }
 
@@ -103,6 +104,7 @@ export class DatabaseStorage implements IStorage {
     return {
       ...bookmark,
       tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+      folder: bookmark.folder || undefined
     };
   }
 
@@ -130,6 +132,7 @@ export class DatabaseStorage implements IStorage {
     return result.map((bookmark) => ({
       ...bookmark,
       tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+      folder: bookmark.folder || undefined
     }));
   }
 
@@ -149,6 +152,7 @@ export class DatabaseStorage implements IStorage {
     return result.filter(bookmark => bookmark.tags.length > 0).map((bookmark) => ({
       ...bookmark,
       tags: bookmark.tags.map((bookmarkTag) => bookmarkTag.tag),
+      folder: bookmark.folder || undefined
     }));
   }
 
