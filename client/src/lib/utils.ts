@@ -5,7 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Date | string | number): string {
+export function formatDate(date: Date | string | number | null): string {
+  if (!date) return 'Unknown date';
+  
   const d = new Date(date);
   const now = new Date();
   const diff = now.getTime() - d.getTime();
@@ -51,19 +53,16 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 export function getBrowserIcon(domain: string): string {
-  const commonBrowsers = [
-    { domain: 'chrome', icon: 'ri-chrome-fill' },
-    { domain: 'firefox', icon: 'ri-firefox-fill' },
-    { domain: 'safari', icon: 'ri-safari-fill' },
-    { domain: 'edge', icon: 'ri-edge-fill' },
-    { domain: 'opera', icon: 'ri-opera-fill' },
-  ];
+  if (!domain) return 'https://www.google.com/favicon.ico';
   
-  const match = commonBrowsers.find(browser => 
-    domain.toLowerCase().includes(browser.domain)
-  );
+  // Clean up domain to get the root domain
+  let cleanDomain = domain;
+  if (cleanDomain.startsWith('www.')) {
+    cleanDomain = cleanDomain.substring(4);
+  }
   
-  return match ? match.icon : 'ri-global-line';
+  // Get favicon from Google's favicon service
+  return `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=64`;
 }
 
 export function getRandomColor(): string {

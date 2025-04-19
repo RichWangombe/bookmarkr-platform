@@ -4,10 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { formatDate, getDomainFromUrl, truncateText } from "@/lib/utils";
+import { formatDate, getDomainFromUrl, truncateText, getBrowserIcon } from "@/lib/utils";
 import { BookmarkWithTags } from "@shared/schema";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 
 interface BookmarkCardProps {
   bookmark: BookmarkWithTags;
@@ -85,92 +87,128 @@ export function BookmarkCard({ bookmark, onEdit }: BookmarkCardProps) {
 
   return (
     <>
-      <Card className="bookmark-card overflow-hidden transition-all duration-200 hover:shadow-[0_4px_6px_rgba(0,0,0,0.1)]">
-        <div className="aspect-video bg-gray-100 relative">
-          <a href={bookmark.url} target="_blank" rel="noopener noreferrer">
-            <img 
-              src={imageUrl} 
-              alt={bookmark.title} 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
-              }}
-            />
-          </a>
-          <div className="absolute top-2 right-2 flex space-x-1">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="p-1.5 bg-white bg-opacity-90 rounded-full shadow-sm hover:bg-opacity-100 transition-colors"
-              onClick={handleToggleFavorite}
-              disabled={toggleFavoriteMutation.isPending}
-            >
-              {bookmark.favorite ? (
-                <i className="ri-star-fill text-yellow-500"></i>
-              ) : (
-                <i className="ri-star-line text-text text-opacity-70 hover:text-yellow-500"></i>
-              )}
-            </Button>
+      <motion.div
+        whileHover={{ y: -5 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      >
+        <Card className="bookmark-card overflow-hidden rounded-xl border border-gray-100 hover:border-primary/20 transition-all duration-300 hover:shadow-lg">
+          <div className="aspect-video bg-gray-100 relative overflow-hidden">
+            <a href={bookmark.url} target="_blank" rel="noopener noreferrer">
+              <img 
+                src={imageUrl} 
+                alt={bookmark.title} 
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=315&q=80';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+            </a>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="p-1.5 bg-white bg-opacity-90 rounded-full shadow-sm hover:bg-opacity-100 transition-colors"
+            {bookmark.folder && (
+              <div className="absolute top-2 left-2">
+                <Badge 
+                  variant="outline" 
+                  className="bg-white/90 backdrop-blur-sm text-xs font-medium shadow-sm"
+                  style={{ 
+                    borderColor: bookmark.folder.color,
+                    color: bookmark.folder.color
+                  }}
                 >
-                  <i className="ri-more-2-fill text-text text-opacity-70"></i>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleEdit}>
-                  <i className="ri-edit-line mr-2"></i> Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDelete} className="text-red-500">
-                  <i className="ri-delete-bin-line mr-2"></i> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-        
-        <CardContent className="p-4">
-          <div className="flex items-start mb-2">
-            <div className="flex-shrink-0 w-6 h-6 mr-2 rounded bg-primary bg-opacity-10 flex items-center justify-center">
-              <i className="ri-global-line text-primary text-sm"></i>
+                  {bookmark.folder.name}
+                </Badge>
+              </div>
+            )}
+            
+            <div className="absolute top-2 right-2 flex space-x-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                onClick={handleToggleFavorite}
+                disabled={toggleFavoriteMutation.isPending}
+              >
+                {bookmark.favorite ? (
+                  <motion.i 
+                    initial={{ scale: 0.5 }}
+                    animate={{ scale: 1 }}
+                    className="ri-star-fill text-yellow-500"
+                  />
+                ) : (
+                  <i className="ri-star-line text-gray-700/70 hover:text-yellow-500"></i>
+                )}
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                  >
+                    <i className="ri-more-2-fill text-gray-700/70"></i>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
+                    <i className="ri-edit-line mr-2"></i> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDelete} className="text-red-500 cursor-pointer">
+                    <i className="ri-delete-bin-line mr-2"></i> Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <h3 className="font-medium text-text leading-tight">
-              <a href={bookmark.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
-                {truncateText(bookmark.title, 60)}
-              </a>
-            </h3>
           </div>
           
-          {bookmark.description && (
-            <p className="text-text text-opacity-70 text-sm mb-3 line-clamp-2">
-              {bookmark.description}
-            </p>
-          )}
-          
-          {bookmark.tags && bookmark.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {bookmark.tags.map(tag => (
-                <span 
-                  key={tag.id} 
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary bg-opacity-10 text-primary"
-                >
-                  {tag.name}
-                </span>
-              ))}
+          <CardContent className="p-5">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <img 
+                  src={getBrowserIcon(domain)} 
+                  alt={domain}
+                  className="w-4 h-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://www.google.com/favicon.ico';
+                  }}
+                />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 leading-tight mb-1">
+                  <a href={bookmark.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    {truncateText(bookmark.title, 60)}
+                  </a>
+                </h3>
+                <div className="flex items-center text-xs text-gray-500">
+                  <span>{domain}</span>
+                  <span className="mx-1">•</span>
+                  <span>{formatDate(bookmark.createdAt)}</span>
+                </div>
+              </div>
             </div>
-          )}
-          
-          <div className="flex items-center justify-between text-xs text-text text-opacity-60">
-            <span>{domain}</span>
-            <span>{formatDate(bookmark.createdAt)}</span>
-          </div>
-        </CardContent>
-      </Card>
+            
+            {bookmark.description && (
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                {bookmark.description}
+              </p>
+            )}
+            
+            {bookmark.tags && bookmark.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {bookmark.tags.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    variant="secondary"
+                    className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    #{tag.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>
