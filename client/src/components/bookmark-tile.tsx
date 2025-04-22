@@ -33,7 +33,7 @@ export function BookmarkTile({
 
   return (
     <motion.div 
-      className={`relative group overflow-hidden rounded-lg ${isCompact ? 'h-40' : 'h-64 md:h-72'} 
+      className={`bookmark-tile relative group overflow-hidden rounded-lg ${isCompact ? 'h-40' : 'h-64 md:h-72'} 
         shadow-md hover:shadow-xl transition-shadow duration-300 bg-card dark:bg-card`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -88,7 +88,7 @@ export function BookmarkTile({
       <div className="absolute top-3 right-3 z-10">
         <button 
           onClick={() => onBookmark && onBookmark(bookmark)}
-          className="h-8 w-8 rounded-full flex items-center justify-center bg-black/30 backdrop-blur-sm 
+          className="bookmark-controls h-8 w-8 rounded-full flex items-center justify-center
             border border-white/20 text-white/80 hover:bg-primary/80 hover:text-white transition-colors"
         >
           {bookmark.favorite ? (

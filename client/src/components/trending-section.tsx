@@ -52,17 +52,24 @@ export function TrendingSection({ onBookmark, onTagClick }: TrendingSectionProps
       transition={{ duration: 0.4 }}
     >
       <div className="flex items-center mb-4">
-        <div className="bg-primary/10 text-primary p-1.5 rounded-full mr-2">
+        <div className="glass-panel primary-glow bg-primary/10 text-primary p-2 rounded-full mr-2 flex items-center justify-center">
           <TrendingUp className="h-4 w-4" />
         </div>
-        <h2 className="text-lg font-medium">Trending Now</h2>
+        <h2 className="text-lg font-medium dark:text-white">Trending Now</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {trendingItems.slice(0, 3).map((item, index) => (
-          <div 
+          <motion.div 
             key={item.id} 
-            className={index === 0 ? "col-span-1 md:col-span-2 lg:col-span-1" : ""}
+            className={`${index === 0 ? "col-span-1 md:col-span-2 lg:col-span-1" : ""}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              duration: 0.5,
+              delay: index * 0.1,
+              ease: [0.25, 0.1, 0.25, 1] 
+            }}
           >
             <BookmarkTile 
               bookmark={item}
@@ -70,7 +77,7 @@ export function TrendingSection({ onBookmark, onTagClick }: TrendingSectionProps
               onTagClick={onTagClick}
               isCompact={false}
             />
-          </div>
+          </motion.div>
         ))}
       </div>
     </motion.div>
