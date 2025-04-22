@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { NewsFeedSource, getCrawlSources } from './sources';
+import { NewsFeedSource, getCrawlSources, markSourceAsFailing, getReliableSources } from './sources';
 import { NewsItem } from './rss-fetcher';
 
 /**
@@ -217,6 +217,8 @@ export async function crawlWebsite(source: NewsFeedSource): Promise<NewsItem[]> 
     return articles;
   } catch (error) {
     console.error(`Error crawling ${source.name}:`, error);
+    // Mark this source as potentially failing for future reference
+    markSourceAsFailing(source.id);
     return [];
   }
 }
@@ -259,16 +261,28 @@ async function processBatches(
 
 /**
  * Crawls articles from all configured crawl sources with improved rate limiting
+ * Skips consistently failing sources to avoid wasting resources
  */
 export async function crawlAllSources(): Promise<NewsItem[]> {
-  const crawlSources = getCrawlSources();
-  return processBatches(crawlSources, 3, crawlWebsite); // Process 3 sources at a time
+  const allSources = getCrawlSources();
+  
+  // Filter out consistently failing sources to avoid wasting resources
+  const reliableSources = getReliableSources(allSources);
+  console.log(`Using ${reliableSources.length} reliable crawl sources out of ${allSources.length} total sources`);
+  
+  return processBatches(reliableSources, 3, crawlWebsite); // Process 3 sources at a time
 }
 
 /**
  * Crawls articles from sources in a specific category with improved rate limiting
+ * Skips consistently failing sources to avoid wasting resources
  */
 export async function crawlByCategory(category: string): Promise<NewsItem[]> {
-  const crawlSources = getCrawlSources().filter(source => source.category === category);
-  return processBatches(crawlSources, 2, crawlWebsite); // Process 2 sources at a time for categories
+  const categorySources = getCrawlSources().filter(source => source.category === category);
+  
+  // Filter out consistently failing sources to avoid wasting resources
+  const reliableSources = getReliableSources(categorySources);
+  console.log(`Using ${reliableSources.length} reliable crawl sources out of ${categorySources.length} total sources for category '${category}'`);
+  
+  return processBatches(reliableSources, 2, crawlWebsite); // Process 2 sources at a time for categories
 }

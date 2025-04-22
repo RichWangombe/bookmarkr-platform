@@ -1,5 +1,5 @@
 import Parser from 'rss-parser';
-import { NewsFeedSource, getRssSources } from './sources';
+import { NewsFeedSource, getRssSources, markSourceAsFailing, getReliableSources } from './sources';
 import axios from 'axios';
 
 // Define the structure of a normalized news item
@@ -209,6 +209,8 @@ export async function fetchRssFeed(source: NewsFeedSource): Promise<NewsItem[]> 
     });
   } catch (error) {
     console.error(`Error fetching RSS from ${source.name}:`, error);
+    // Mark this source as potentially failing for future reference
+    markSourceAsFailing(source.id);
     return [];
   }
 }
@@ -251,16 +253,28 @@ async function processBatches(
 
 /**
  * Fetches news from all RSS sources with improved rate limiting
+ * Skips consistently failing sources to avoid wasting resources
  */
 export async function fetchAllRssNews(): Promise<NewsItem[]> {
-  const rssSources = getRssSources();
-  return processBatches(rssSources, 5, fetchRssFeed); // Process 5 sources at a time
+  const allSources = getRssSources();
+  
+  // Filter out consistently failing sources to avoid wasting resources
+  const reliableSources = getReliableSources(allSources);
+  console.log(`Using ${reliableSources.length} reliable RSS sources out of ${allSources.length} total sources`);
+  
+  return processBatches(reliableSources, 5, fetchRssFeed); // Process 5 sources at a time
 }
 
 /**
  * Fetches news from RSS sources in a specific category with improved rate limiting
+ * Skips consistently failing sources to avoid wasting resources
  */
 export async function fetchNewsByCategory(category: string): Promise<NewsItem[]> {
-  const rssSources = getRssSources().filter(source => source.category === category);
-  return processBatches(rssSources, 3, fetchRssFeed); // Process 3 sources at a time for categories
+  const categorySources = getRssSources().filter(source => source.category === category);
+  
+  // Filter out consistently failing sources to avoid wasting resources
+  const reliableSources = getReliableSources(categorySources);
+  console.log(`Using ${reliableSources.length} reliable RSS sources out of ${categorySources.length} total sources for category '${category}'`);
+  
+  return processBatches(reliableSources, 3, fetchRssFeed); // Process 3 sources at a time for categories
 }

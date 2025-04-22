@@ -14,6 +14,42 @@ export interface NewsFeedSource {
 }
 
 // A collection of diverse news sources with RSS feeds and crawl targets
+// Track sources that consistently fail to help with future requests
+const failingSourcesCache: Record<string, { count: number, lastAttempt: Date }> = {};
+
+// Mark a source as potentially failing
+export function markSourceAsFailing(sourceId: string): void {
+  const now = new Date();
+  if (!failingSourcesCache[sourceId]) {
+    failingSourcesCache[sourceId] = { count: 1, lastAttempt: now };
+  } else {
+    // Increment failure count if within the last 12 hours
+    const hoursSinceLastAttempt = (now.getTime() - failingSourcesCache[sourceId].lastAttempt.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceLastAttempt < 12) {
+      failingSourcesCache[sourceId].count++;
+    } else {
+      // Reset if it's been a while (give source another chance after 12 hours)
+      failingSourcesCache[sourceId].count = 1;
+    }
+    
+    failingSourcesCache[sourceId].lastAttempt = now;
+  }
+}
+
+// Check if a source has been consistently failing (3+ consecutive failures)
+export function isConsistentlyFailing(sourceId: string): boolean {
+  if (!failingSourcesCache[sourceId]) return false;
+  
+  // Source is considered consistently failing if it failed 3+ times
+  return failingSourcesCache[sourceId].count >= 3;
+}
+
+// Get a list of reliable sources (excluding consistently failing ones)
+export function getReliableSources(sources: NewsFeedSource[]): NewsFeedSource[] {
+  return sources.filter(source => !isConsistentlyFailing(source.id));
+}
+
 export const newsSources: NewsFeedSource[] = [
   // Technology Sources
   {
