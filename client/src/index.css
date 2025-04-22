@@ -171,6 +171,35 @@
   border: 1px solid hsla(var(--primary), 0.1);
 }
 
+/* Staggered animations for masonry grid */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse animation for primary elements */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 hsla(var(--primary), 0.3);
+  }
+  70% {
+    box-shadow: 0 0 0 10px hsla(var(--primary), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsla(var(--primary), 0);
+  }
+}
+
+.dark .pulse-animation {
+  animation: pulse 2s infinite;
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */

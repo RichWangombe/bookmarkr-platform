@@ -62,14 +62,26 @@ export function MasonryGrid({
       }}
     >
       {columnArrays.map((column, colIndex) => (
-        <div key={colIndex} className="flex flex-col" style={{ gap: `${gap}px` }}>
-          {column.map((item) => (
-            <BookmarkTile
+        <div 
+          key={colIndex} 
+          className="flex flex-col" 
+          style={{ gap: `${gap}px` }}
+        >
+          {column.map((item, itemIndex) => (
+            <div 
               key={item.id}
-              bookmark={item}
-              onBookmark={onBookmark}
-              onTagClick={onTagClick}
-            />
+              style={{ 
+                opacity: 0,
+                transform: 'translateY(20px)',
+                animation: `fadeIn 0.5s ease-out ${(colIndex * 0.1) + (itemIndex * 0.05)}s forwards`
+              }}
+            >
+              <BookmarkTile
+                bookmark={item}
+                onBookmark={onBookmark}
+                onTagClick={onTagClick}
+              />
+            </div>
           ))}
         </div>
       ))}
