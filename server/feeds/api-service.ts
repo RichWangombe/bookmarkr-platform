@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 import { NewsItem } from './rss-fetcher';
-import { getApiSources } from './sources';
+import { getApiSources, markSourceAsFailing, getReliableSources } from './sources';
 import { log } from '../vite';
 
 // Cache to store responses and limit API calls
@@ -100,7 +100,7 @@ async function fetchFromGNews(query?: string, max: number = 10, retries = 2): Pr
             category: determineCategoryFromTags(article.title + ' ' + article.description),
             tags: generateTagsFromContent(article.title + ' ' + article.description)
           };
-        }).filter(item => item.url && item.title); // Filter out any items missing essential fields
+        }).filter((item: NewsItem) => item.url && item.title); // Filter out any items missing essential fields
         
         // Update cache
         apiCache[cacheKey] = {
@@ -138,6 +138,8 @@ async function fetchFromGNews(query?: string, max: number = 10, retries = 2): Pr
     }
   } catch (error) {
     log(`Error fetching from GNews API: ${error}`, 'api-service');
+    // Mark GNews as failing if we encounter persistent errors
+    markSourceAsFailing('gnews');
     return [];
   }
 }
@@ -180,12 +182,17 @@ function determineCategoryFromTags(content: string): string {
 }
 
 export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
-  const apiSources = getApiSources();
+  const allApiSources = getApiSources();
+  
+  // Filter out consistently failing sources
+  const reliableSources = getReliableSources(allApiSources);
+  log(`Using ${reliableSources.length} reliable API sources out of ${allApiSources.length} total sources`, 'api-service');
   
   // Currently we only support GNews
-  const gNewsSource = apiSources.find(s => s.id === 'gnews');
+  const gNewsSource = reliableSources.find(s => s.id === 'gnews');
   
   if (!gNewsSource) {
+    log('No reliable API sources available', 'api-service');
     return [];
   }
   
@@ -199,6 +206,20 @@ export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
 }
 
 export async function searchFromApis(query: string): Promise<NewsItem[]> {
+  const allApiSources = getApiSources();
+  
+  // Filter out consistently failing sources
+  const reliableSources = getReliableSources(allApiSources);
+  log(`Using ${reliableSources.length} reliable API sources for search out of ${allApiSources.length} total sources`, 'api-service');
+  
+  // Currently we only support GNews for search
+  const gNewsSource = reliableSources.find(s => s.id === 'gnews');
+  
+  if (!gNewsSource) {
+    log('No reliable API sources available for search', 'api-service');
+    return [];
+  }
+  
   // Forward the search query to GNews
   return fetchFromGNews(query);
 }

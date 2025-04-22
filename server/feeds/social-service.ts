@@ -6,7 +6,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { NewsItem } from './rss-fetcher';
-import { getSocialSources } from './sources';
+import { getSocialSources, markSourceAsFailing, getReliableSources } from './sources';
 import { log } from '../vite';
 
 // Cache to store responses
@@ -95,6 +95,8 @@ async function fetchFromReddit(subreddit: string = 'technology', limit: number =
     return [];
   } catch (error) {
     log(`Error fetching from Reddit: ${error}`, 'social-service');
+    // Mark Reddit as a failing source
+    markSourceAsFailing('reddit-tech');
     return [];
   }
 }
@@ -226,6 +228,8 @@ async function fetchFromHackerNews(limit: number = 15): Promise<NewsItem[]> {
     return itemsWithImages;
   } catch (error) {
     log(`Error fetching from Hacker News: ${error}`, 'social-service');
+    // Mark Hacker News as a failing source
+    markSourceAsFailing('hackernews');
     return [];
   }
 }
