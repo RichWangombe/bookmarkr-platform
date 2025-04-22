@@ -130,7 +130,7 @@ export function BookmarkTile({
             
             <div className="flex items-center justify-between">
               <div className="text-xs text-white/60">
-                {formatDate(bookmark.createdAt || (bookmark.publishedAt as Date) || new Date())}
+                {formatDate(bookmark.createdAt || new Date())}
               </div>
               
               <a 
