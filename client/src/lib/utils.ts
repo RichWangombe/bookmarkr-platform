@@ -78,3 +78,29 @@ export function getRandomColor(): string {
   
   return colors[Math.floor(Math.random() * colors.length)];
 }
+
+// Function to generate a consistent gradient for a given ID
+export function getRandomGradient(id: number | string): string {
+  // Use the id to generate a deterministic gradient
+  const seed = typeof id === 'string' ? 
+    id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
+    Number(id);
+
+  // Base gradients with deep blues and dark theme-friendly colors
+  const gradients = [
+    'linear-gradient(135deg, #1a2a6c, #2a3a7c)',
+    'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
+    'linear-gradient(135deg, #12100e, #2c3e50)',
+    'linear-gradient(135deg, #000428, #004e92)',
+    'linear-gradient(135deg, #16222a, #3a6073)',
+    'linear-gradient(135deg, #1e3c72, #2a5298)',
+    'linear-gradient(135deg, #243949, #517fa4)',
+    'linear-gradient(135deg, #141e30, #243b55)',
+    'linear-gradient(135deg, #2b5876, #4e4376)',
+    'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
+    'linear-gradient(135deg, #000046, #1cb5e0)',
+    'linear-gradient(135deg, #000000, #434343)'
+  ];
+  
+  return gradients[seed % gradients.length];
+}
