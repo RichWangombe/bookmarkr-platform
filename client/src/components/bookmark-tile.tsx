@@ -92,9 +92,9 @@ export function BookmarkTile({
             border border-white/20 text-white/80 hover:bg-primary/80 hover:text-white transition-colors"
         >
           {bookmark.favorite ? (
-            <StarIcon className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <StarIcon key="star-icon" className="h-4 w-4 fill-yellow-400 text-yellow-400" />
           ) : (
-            <BookmarkIcon className="h-4 w-4" />
+            <BookmarkIcon key="bookmark-icon" className="h-4 w-4" />
           )}
         </button>
       </div>
@@ -122,8 +122,8 @@ export function BookmarkTile({
                     text-white rounded-full flex items-center cursor-pointer transition-colors"
                   onClick={() => onTagClick && onTagClick(tag.id)}
                 >
-                  <TagIcon className="h-3 w-3 mr-1" />
-                  {tag.name}
+                  <TagIcon key={`tag-icon-${tag.id}`} className="h-3 w-3 mr-1" />
+                  <span key={`tag-name-${tag.id}`}>{tag.name}</span>
                 </span>
               ))}
             </div>
@@ -140,8 +140,8 @@ export function BookmarkTile({
                 className="text-xs flex items-center gap-1 text-white bg-primary/80 hover:bg-primary 
                   px-3 py-1.5 rounded-full transition-colors"
               >
-                <span>Visit</span>
-                <ExternalLinkIcon className="h-3 w-3" />
+                <span key="visit-text">Visit</span>
+                <ExternalLinkIcon key="visit-icon" className="h-3 w-3" />
               </a>
             </div>
           </motion.div>
