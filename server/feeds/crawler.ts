@@ -46,24 +46,47 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Try to request a URL with retries and exponential backoff
+ * With improved anti-blocking measures
  */
 async function tryFetchWithRetry(url: string, retries = 2): Promise<any> {
+  // Rotate user agents to avoid detection
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+  ];
+  
+  // Use a different user agent for each retry
+  const userAgent = userAgents[Math.min(retries, userAgents.length - 1)];
+  
   try {
     return await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'User-Agent': userAgent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
-        'Cache-Control': 'max-age=0'
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Referer': 'https://www.google.com/', // Pretend we're coming from Google
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'Sec-Fetch-User': '?1'
       },
-      timeout: 15000
+      timeout: 15000,
+      maxRedirects: 5
     });
   } catch (error) {
     if (retries <= 0) throw error;
     
-    // Exponential backoff
-    const backoffTime = 1000 * Math.pow(2, 3 - retries);
-    console.log(`Retrying fetch in ${backoffTime}ms...`);
+    // More aggressive exponential backoff
+    const backoffTime = 2000 * Math.pow(2, 3 - retries);
+    console.log(`Retrying fetch for ${new URL(url).hostname} in ${backoffTime}ms...`);
     await delay(backoffTime);
     return tryFetchWithRetry(url, retries - 1);
   }
@@ -199,29 +222,53 @@ export async function crawlWebsite(source: NewsFeedSource): Promise<NewsItem[]> 
 }
 
 /**
- * Crawls articles from all configured crawl sources
+ * Process sources in batches to avoid overwhelming servers
+ * @param sources List of news sources to process
+ * @param batchSize Number of sources to process in parallel
+ * @param processor Function to process each source
  */
-export async function crawlAllSources(): Promise<NewsItem[]> {
-  const crawlSources = getCrawlSources();
-  const allNewsPromises = crawlSources.map(source => crawlWebsite(source));
+async function processBatches(
+  sources: NewsFeedSource[],
+  batchSize: number,
+  processor: (source: NewsFeedSource) => Promise<NewsItem[]>
+): Promise<NewsItem[]> {
+  const results: NewsItem[] = [];
+  // Process sources in batches to avoid overwhelming the servers
+  for (let i = 0; i < sources.length; i += batchSize) {
+    const batch = sources.slice(i, i + batchSize);
+    console.log(`Processing crawl batch ${i/batchSize + 1} of ${Math.ceil(sources.length/batchSize)} (${batch.length} sources)`);
+    
+    const batchPromises = batch.map(source => processor(source));
+    const batchResults = await Promise.allSettled(batchPromises);
+    
+    // Extract successful results
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        results.push(...result.value);
+      }
+    }
+    
+    // Add a small delay between batches to be gentle on servers
+    if (i + batchSize < sources.length) {
+      await delay(2000); // Longer delay for crawling
+    }
+  }
   
-  const results = await Promise.allSettled(allNewsPromises);
-  
-  return results
-    .filter((result): result is PromiseFulfilledResult<NewsItem[]> => result.status === 'fulfilled')
-    .flatMap(result => result.value);
+  return results;
 }
 
 /**
- * Crawls articles from sources in a specific category
+ * Crawls articles from all configured crawl sources with improved rate limiting
+ */
+export async function crawlAllSources(): Promise<NewsItem[]> {
+  const crawlSources = getCrawlSources();
+  return processBatches(crawlSources, 3, crawlWebsite); // Process 3 sources at a time
+}
+
+/**
+ * Crawls articles from sources in a specific category with improved rate limiting
  */
 export async function crawlByCategory(category: string): Promise<NewsItem[]> {
   const crawlSources = getCrawlSources().filter(source => source.category === category);
-  const allNewsPromises = crawlSources.map(source => crawlWebsite(source));
-  
-  const results = await Promise.allSettled(allNewsPromises);
-  
-  return results
-    .filter((result): result is PromiseFulfilledResult<NewsItem[]> => result.status === 'fulfilled')
-    .flatMap(result => result.value);
+  return processBatches(crawlSources, 2, crawlWebsite); // Process 2 sources at a time for categories
 }

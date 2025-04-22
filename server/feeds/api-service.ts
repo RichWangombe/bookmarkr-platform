@@ -18,15 +18,19 @@ interface CacheItem {
 const apiCache: Record<string, CacheItem> = {};
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// Handles GNews API (free tier)
-async function fetchFromGNews(query?: string, max: number = 10): Promise<NewsItem[]> {
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Handles GNews API (free tier) with improved error handling and rate limiting
+async function fetchFromGNews(query?: string, max: number = 10, retries = 2): Promise<NewsItem[]> {
   try {
     // Cache key based on query
     const cacheKey = `gnews-${query || 'top'}`;
     
-    // Check cache first
+    // Check cache first - saves API quota
     if (apiCache[cacheKey] && 
         (new Date().getTime() - apiCache[cacheKey].timestamp.getTime() < CACHE_TTL_MS)) {
+      log(`Using cached data for GNews query: ${query || 'top headlines'}`, 'api-service');
       return apiCache[cacheKey].data;
     }
     
@@ -34,8 +38,6 @@ async function fetchFromGNews(query?: string, max: number = 10): Promise<NewsIte
     let apiUrl = 'https://gnews.io/api/v4/';
     
     // API key - free tier has 100 requests/day
-    // For proper implementation, we should use environment variables
-    // Note that the free tier requires attribution
     const apiKey = process.env.GNEWS_API_KEY;
     
     if (!apiKey) {
@@ -50,52 +52,90 @@ async function fetchFromGNews(query?: string, max: number = 10): Promise<NewsIte
       apiUrl += 'top-headlines?';
     }
     
-    // Add common parameters
-    apiUrl += `&token=${apiKey}&lang=en&max=${max}`;
+    // Add common parameters - use modern API structure
+    apiUrl += `&apikey=${apiKey}&lang=en&max=${max}&country=us,gb,ca,au`;
     
-    // Fetch data 
-    const response = await axios.get(apiUrl, {
-      headers: {
-        'User-Agent': 'Bookmarkr/1.0 (educational project)'
-      },
-      timeout: 10000
-    });
+    // Rotate user agents to avoid detection
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+    ];
     
-    if (response.data && response.data.articles) {
-      // Transform to our standard NewsItem format
-      const items: NewsItem[] = response.data.articles.map((article: any) => {
-        // Create a deterministic ID
-        const id = `gnews-${Buffer.from(article.url).toString('base64').substring(0, 12)}`;
-        
-        return {
-          id,
-          title: article.title,
-          description: article.description,
-          content: article.content,
-          url: article.url,
-          imageUrl: article.image,
-          publishedAt: new Date(article.publishedDate),
-          source: {
-            id: 'gnews',
-            name: article.source.name,
-            iconUrl: 'https://gnews.io/favicon.ico'
-          },
-          category: determineCategoryFromTags(article.title + ' ' + article.description),
-          tags: generateTagsFromContent(article.title + ' ' + article.description)
-        };
+    const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+    
+    // Fetch data with better error handling
+    try {
+      log(`Fetching from GNews API: ${query || 'top headlines'}`, 'api-service');
+      const response = await axios.get(apiUrl, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Referer': 'https://www.google.com/'
+        },
+        timeout: 15000
       });
       
-      // Update cache
-      apiCache[cacheKey] = {
-        data: items,
-        timestamp: new Date()
-      };
+      if (response.data && response.data.articles && Array.isArray(response.data.articles)) {
+        // Transform to our standard NewsItem format
+        const items: NewsItem[] = response.data.articles.map((article: any) => {
+          // Create a deterministic ID
+          const id = `gnews-${Buffer.from(article.url || '').toString('base64').substring(0, 12)}`;
+          
+          // Ensure we have valid data for each field
+          return {
+            id,
+            title: article.title || 'Untitled Article',
+            description: article.description || '',
+            content: article.content || article.description || '',
+            url: article.url || '',
+            imageUrl: article.image || undefined,
+            publishedAt: article.publishedAt ? new Date(article.publishedAt) : new Date(),
+            source: {
+              id: 'gnews',
+              name: article.source?.name || 'GNews',
+              iconUrl: 'https://gnews.io/favicon.ico'
+            },
+            category: determineCategoryFromTags(article.title + ' ' + article.description),
+            tags: generateTagsFromContent(article.title + ' ' + article.description)
+          };
+        }).filter(item => item.url && item.title); // Filter out any items missing essential fields
+        
+        // Update cache
+        apiCache[cacheKey] = {
+          data: items,
+          timestamp: new Date()
+        };
+        
+        log(`Fetched ${items.length} articles from GNews API`, 'api-service');
+        return items;
+      }
       
-      log(`Fetched ${items.length} articles from GNews API`, 'api-service');
-      return items;
+      return [];
+    } catch (error: any) {
+      // Specific error handling for different error types
+      if (error.response) {
+        // Server responded with error status
+        log(`GNews API error (${error.response.status}): ${error.response.data?.message || 'Unknown error'}`, 'api-service');
+        
+        // Handle rate limiting with exponential backoff
+        if (error.response.status === 429 && retries > 0) {
+          const backoffTime = 2000 * Math.pow(2, 3 - retries);
+          log(`Rate limited by GNews API, retrying in ${backoffTime}ms...`, 'api-service');
+          await delay(backoffTime);
+          return fetchFromGNews(query, max, retries - 1);
+        }
+      } else if (error.request) {
+        // Request made but no response received
+        log(`GNews API request timeout or network error: ${error.message}`, 'api-service');
+      } else {
+        // Error in setting up the request
+        log(`GNews API error in request setup: ${error.message}`, 'api-service');
+      }
+      
+      throw error;
     }
-    
-    return [];
   } catch (error) {
     log(`Error fetching from GNews API: ${error}`, 'api-service');
     return [];
