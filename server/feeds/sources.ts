@@ -17,6 +17,20 @@ export interface NewsFeedSource {
 // Track sources that consistently fail to help with future requests
 const failingSourcesCache: Record<string, { count: number, lastAttempt: Date }> = {};
 
+// Reset cache periodically (every 24 hours) to give failing sources another chance
+setInterval(() => {
+  const oneDay = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  const now = new Date().getTime();
+  
+  for (const sourceId in failingSourcesCache) {
+    const timeSinceLastAttempt = now - failingSourcesCache[sourceId].lastAttempt.getTime();
+    if (timeSinceLastAttempt > oneDay) {
+      console.log(`Resetting failure count for source: ${sourceId}`);
+      delete failingSourcesCache[sourceId];
+    }
+  }
+}, 3600000); // Check every hour
+
 // Mark a source as potentially failing
 export function markSourceAsFailing(sourceId: string): void {
   const now = new Date();
@@ -47,6 +61,11 @@ export function isConsistentlyFailing(sourceId: string): boolean {
 
 // Get a list of reliable sources (excluding consistently failing ones)
 export function getReliableSources(sources: NewsFeedSource[]): NewsFeedSource[] {
+  const failingSources = sources.filter(source => isConsistentlyFailing(source.id));
+  if (failingSources.length > 0) {
+    console.log(`Skipping ${failingSources.length} consistently failing sources:`, 
+      failingSources.map(s => s.name).join(', '));
+  }
   return sources.filter(source => !isConsistentlyFailing(source.id));
 }
 

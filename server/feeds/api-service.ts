@@ -14,9 +14,38 @@ interface CacheItem {
   timestamp: Date;
 }
 
-// Cache with 1-hour TTL by default
+// Cache with adaptive TTL based on time of day
 const apiCache: Record<string, CacheItem> = {};
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+// Baseline TTL of 1 hour
+const BASE_CACHE_TTL_MS = 60 * 60 * 1000; 
+
+// Get TTL based on current time and category - we can be smarter about API usage
+// For categories that update less frequently (like science), we can use longer cache TTLs
+// During low activity hours (nighttime), we can also increase cache TTL
+function getAdaptiveTTL(category?: string): number {
+  const now = new Date();
+  const hour = now.getHours();
+  
+  // Default multiplier is 1 (so TTL = BASE_CACHE_TTL_MS)
+  let multiplier = 1;
+  
+  // Categories that update less frequently get longer cache times
+  if (category) {
+    if (category === 'science' || category === 'design') {
+      multiplier *= 1.5; // Science and design content typically updates less frequently
+    } else if (category === 'ai') {
+      multiplier *= 1.2; // AI content updates somewhat frequently but not as much as news
+    }
+  }
+  
+  // During low activity hours (11 PM - 6 AM), extend cache time to save API quota
+  if (hour >= 23 || hour < 6) {
+    multiplier *= 2;
+    log(`Extending cache TTL during low-activity hours (${hour}:00)`, 'api-service');
+  }
+  
+  return Math.floor(BASE_CACHE_TTL_MS * multiplier);
+}
 
 // Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -28,9 +57,11 @@ async function fetchFromGNews(query?: string, max: number = 10, retries = 2): Pr
     const cacheKey = `gnews-${query || 'top'}`;
     
     // Check cache first - saves API quota
+    // Use adaptive TTL based on query/category and time of day
+    const cacheTTL = getAdaptiveTTL(query);
     if (apiCache[cacheKey] && 
-        (new Date().getTime() - apiCache[cacheKey].timestamp.getTime() < CACHE_TTL_MS)) {
-      log(`Using cached data for GNews query: ${query || 'top headlines'}`, 'api-service');
+        (new Date().getTime() - apiCache[cacheKey].timestamp.getTime() < cacheTTL)) {
+      log(`Using cached data for GNews query: ${query || 'top headlines'} (TTL: ${Math.round(cacheTTL/60000)} minutes)`, 'api-service');
       return apiCache[cacheKey].data;
     }
     

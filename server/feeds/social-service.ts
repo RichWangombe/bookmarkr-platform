@@ -250,11 +250,15 @@ function generateTagsFromContent(content: string): string[] {
 
 // Public function to fetch social content by category
 export async function fetchFromSocialPlatforms(category?: string): Promise<NewsItem[]> {
-  const socialSources = getSocialSources();
+  const allSocialSources = getSocialSources();
   
-  // Check which platforms are available
-  const hasHackerNews = socialSources.find(s => s.id === 'hackernews');
-  const hasReddit = socialSources.find(s => s.id === 'reddit-tech');
+  // Filter out consistently failing sources
+  const reliableSources = getReliableSources(allSocialSources);
+  log(`Using ${reliableSources.length} reliable social sources out of ${allSocialSources.length} total sources`, 'social-service');
+  
+  // Check which platforms are available and reliable
+  const hasHackerNews = reliableSources.find(s => s.id === 'hackernews');
+  const hasReddit = reliableSources.find(s => s.id === 'reddit-tech');
   
   let results: NewsItem[] = [];
   
