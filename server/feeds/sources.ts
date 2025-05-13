@@ -618,6 +618,16 @@ export const newsSources: NewsFeedSource[] = [
     iconUrl: "https://newsapi.org/favicon-32x32.png",
     requiresCrawling: false,
     type: 'api'
+  },
+  {
+    id: "mediastack",
+    name: "MediaStack",
+    category: "news",
+    region: "global",
+    websiteUrl: "https://mediastack.com/",
+    iconUrl: "https://mediastack.com/site_images/favicon.ico",
+    requiresCrawling: false,
+    type: 'api'
   }
 ];
 

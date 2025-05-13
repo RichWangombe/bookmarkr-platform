@@ -241,20 +241,18 @@ async function fetchFromNewsAPI(query?: string, category?: string, max: number =
     if (query) {
       // Use 'everything' endpoint for searches
       apiUrl += `everything?q=${encodeURIComponent(query)}`;
-    } else if (category && category !== 'news') {
-      // Use 'top-headlines' with category for categories
-      apiUrl += `top-headlines?category=${mapToNewsApiCategory(category)}`;
+      // Add parameters specific to 'everything' endpoint
+      apiUrl += `&apiKey=${apiKey}&language=en&pageSize=${max}&sortBy=relevancy`;
     } else {
       // Default to top headlines
       apiUrl += 'top-headlines?';
-    }
-    
-    // Add common parameters
-    apiUrl += `&apiKey=${apiKey}&language=en&pageSize=${max}`;
-    
-    // Add country only for top-headlines
-    if (!query) {
-      apiUrl += '&country=us';
+      // Add parameters specific to 'top-headlines' endpoint
+      apiUrl += `apiKey=${apiKey}&language=en&pageSize=${max}&country=us`;
+      
+      // Add category for top-headlines if specified
+      if (category && category !== 'news') {
+        apiUrl += `&category=${mapToNewsApiCategory(category)}`;
+      }
     }
     
     // Rotate user agents to avoid detection
@@ -358,6 +356,164 @@ function mapToNewsApiCategory(category: string): string {
   return categoryMap[category] || 'general';
 }
 
+// Handles MediaStack API with error handling and rate limiting
+async function fetchFromMediaStack(query?: string, category?: string, max: number = 20, retries = 2): Promise<NewsItem[]> {
+  try {
+    // Cache key based on query and category
+    const cacheKey = `mediastack-${query || ''}-${category || 'top'}`;
+    
+    // Check cache first - saves API quota
+    const cacheTTL = getAdaptiveTTL(category);
+    if (apiCache[cacheKey] && 
+        (new Date().getTime() - apiCache[cacheKey].timestamp.getTime() < cacheTTL)) {
+      log(`Using cached data for MediaStack query: ${query || category || 'latest news'} (TTL: ${Math.round(cacheTTL/60000)} minutes)`, 'api-service');
+      return apiCache[cacheKey].data;
+    }
+    
+    // Base URL 
+    let apiUrl = 'http://api.mediastack.com/v1/news?';
+    
+    // API key from environment
+    const apiKey = process.env.MEDIASTACK_KEY;
+    
+    if (!apiKey) {
+      log('No MEDIASTACK_KEY found in environment variables', 'api-service');
+      return [];
+    }
+    
+    // Add common parameters
+    apiUrl += `access_key=${apiKey}&languages=en&limit=${max}`;
+    
+    // Add search parameters if query provided
+    if (query) {
+      apiUrl += `&keywords=${encodeURIComponent(query)}`;
+    }
+    
+    // Add category if specified
+    if (category && category !== 'news') {
+      apiUrl += `&categories=${mapToMediaStackCategory(category)}`;
+    }
+    
+    // Add sorting - newest first
+    apiUrl += '&sort=published_desc';
+    
+    // Rotate user agents to avoid detection
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+    ];
+    
+    const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+    
+    // Fetch data with better error handling
+    try {
+      log(`Fetching from MediaStack: ${query || category || 'latest news'}`, 'api-service');
+      const response = await axios.get(apiUrl, {
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'application/json'
+        },
+        timeout: 15000
+      });
+      
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        // Transform to our standard NewsItem format
+        const items: NewsItem[] = response.data.data.map((article: any) => {
+          // Create a deterministic ID
+          const id = `mediastack-${Buffer.from(article.url || '').toString('base64').substring(0, 12)}`;
+          
+          // Extract domain from source URL for icon
+          const sourceDomain = article.source ? extractDomain(article.source) : null;
+          const iconUrl = sourceDomain ? `https://www.google.com/s2/favicons?domain=${sourceDomain}&sz=64` : 'https://mediastack.com/site_images/favicon.ico';
+          
+          return {
+            id,
+            title: article.title || 'Untitled Article',
+            description: article.description || '',
+            content: article.description || '',
+            url: article.url || '',
+            imageUrl: article.image || undefined,
+            publishedAt: article.published_at ? new Date(article.published_at) : new Date(),
+            source: {
+              id: 'mediastack',
+              name: article.source || 'MediaStack',
+              iconUrl
+            },
+            category: article.category || determineCategoryFromTags(article.title + ' ' + (article.description || '')),
+            tags: generateTagsFromContent(article.title + ' ' + (article.description || ''))
+          };
+        }).filter((item: NewsItem) => item.url && item.title); // Filter out any items missing essential fields
+        
+        // Update cache
+        apiCache[cacheKey] = {
+          data: items,
+          timestamp: new Date()
+        };
+        
+        log(`Fetched ${items.length} articles from MediaStack`, 'api-service');
+        return items;
+      }
+      
+      return [];
+    } catch (error: any) {
+      // Specific error handling for different error types
+      if (error.response) {
+        // Server responded with error status
+        log(`MediaStack error (${error.response.status}): ${error.response.data?.error?.info || 'Unknown error'}`, 'api-service');
+        
+        // Handle rate limiting with exponential backoff
+        if ((error.response.status === 429 || error.response.data?.error?.code === 104) && retries > 0) {
+          const backoffTime = 2000 * Math.pow(2, 3 - retries);
+          log(`Rate limited by MediaStack, retrying in ${backoffTime}ms...`, 'api-service');
+          await delay(backoffTime);
+          return fetchFromMediaStack(query, category, max, retries - 1);
+        }
+      } else if (error.request) {
+        // Request made but no response received
+        log(`MediaStack request timeout or network error: ${error.message}`, 'api-service');
+      } else {
+        // Error in setting up the request
+        log(`MediaStack error in request setup: ${error.message}`, 'api-service');
+      }
+      
+      throw error;
+    }
+  } catch (error) {
+    log(`Error fetching from MediaStack: ${error}`, 'api-service');
+    // Mark MediaStack as failing if we encounter persistent errors
+    markSourceAsFailing('mediastack');
+    return [];
+  }
+}
+
+// Helper to extract domain from URL for icon fetching
+function extractDomain(url: string): string | null {
+  try {
+    if (!url.startsWith('http')) {
+      url = 'https://' + url;
+    }
+    const domain = new URL(url).hostname;
+    return domain;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Maps our internal categories to MediaStack categories
+function mapToMediaStackCategory(category: string): string {
+  const categoryMap: Record<string, string> = {
+    'technology': 'technology',
+    'business': 'business',
+    'science': 'science',
+    'design': 'entertainment',
+    'ai': 'technology',
+    'news': 'general'
+  };
+  
+  return categoryMap[category] || 'general';
+}
+
 export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
   const allApiSources = getApiSources();
   
@@ -366,6 +522,7 @@ export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
   log(`Using ${reliableSources.length} reliable API sources out of ${allApiSources.length} total sources`, 'api-service');
   
   let results: NewsItem[] = [];
+  const existingUrls = new Set<string>();
   
   // Check for GNews source
   const gNewsSource = reliableSources.find(s => s.id === 'gnews');
@@ -378,6 +535,9 @@ export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
         // Otherwise fetch top headlines
         results = await fetchFromGNews();
       }
+      
+      // Track URLs for deduplication
+      results.forEach(item => existingUrls.add(item.url));
     } catch (error) {
       log(`Error fetching from GNews: ${error}`, 'api-service');
     }
@@ -391,7 +551,6 @@ export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
       const newsApiResults = await fetchFromNewsAPI(undefined, category);
       
       // Combine results, ensuring no duplicates (by URL)
-      const existingUrls = new Set(results.map(item => item.url));
       for (const item of newsApiResults) {
         if (!existingUrls.has(item.url)) {
           results.push(item);
@@ -403,9 +562,31 @@ export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
     }
   }
   
+  // Check for MediaStack source
+  const mediaStackSource = reliableSources.find(s => s.id === 'mediastack');
+  if (mediaStackSource) {
+    try {
+      // Use MediaStack with the category if specified
+      const mediaStackResults = await fetchFromMediaStack(undefined, category);
+      
+      // Combine results, ensuring no duplicates (by URL)
+      for (const item of mediaStackResults) {
+        if (!existingUrls.has(item.url)) {
+          results.push(item);
+          existingUrls.add(item.url);
+        }
+      }
+    } catch (error) {
+      log(`Error fetching from MediaStack: ${error}`, 'api-service');
+    }
+  }
+  
   if (results.length === 0) {
     log('No reliable API sources available or all sources failed', 'api-service');
   }
+  
+  // Sort combined results by publish date, newest first
+  results.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
   
   return results;
 }
@@ -418,6 +599,7 @@ export async function searchFromApis(query: string): Promise<NewsItem[]> {
   log(`Using ${reliableSources.length} reliable API sources for search out of ${allApiSources.length} total sources`, 'api-service');
   
   let results: NewsItem[] = [];
+  const existingUrls = new Set<string>();
   
   // Check for GNews source
   const gNewsSource = reliableSources.find(s => s.id === 'gnews');
@@ -425,6 +607,9 @@ export async function searchFromApis(query: string): Promise<NewsItem[]> {
     try {
       // Forward the search query to GNews
       results = await fetchFromGNews(query);
+      
+      // Track URLs for deduplication
+      results.forEach(item => existingUrls.add(item.url));
     } catch (error) {
       log(`Error searching with GNews: ${error}`, 'api-service');
     }
@@ -438,7 +623,6 @@ export async function searchFromApis(query: string): Promise<NewsItem[]> {
       const newsApiResults = await fetchFromNewsAPI(query);
       
       // Combine results, ensuring no duplicates (by URL)
-      const existingUrls = new Set(results.map(item => item.url));
       for (const item of newsApiResults) {
         if (!existingUrls.has(item.url)) {
           results.push(item);
@@ -450,9 +634,31 @@ export async function searchFromApis(query: string): Promise<NewsItem[]> {
     }
   }
   
+  // Check for MediaStack source
+  const mediaStackSource = reliableSources.find(s => s.id === 'mediastack');
+  if (mediaStackSource) {
+    try {
+      // Use MediaStack search
+      const mediaStackResults = await fetchFromMediaStack(query);
+      
+      // Combine results, ensuring no duplicates (by URL)
+      for (const item of mediaStackResults) {
+        if (!existingUrls.has(item.url)) {
+          results.push(item);
+          existingUrls.add(item.url);
+        }
+      }
+    } catch (error) {
+      log(`Error searching with MediaStack: ${error}`, 'api-service');
+    }
+  }
+  
   if (results.length === 0) {
     log('No reliable API sources available for search or all sources failed', 'api-service');
   }
+  
+  // Sort combined results by publish date, newest first
+  results.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
   
   return results;
 }
