@@ -608,6 +608,16 @@ export const newsSources: NewsFeedSource[] = [
     iconUrl: "https://gnews.io/favicon.ico",
     requiresCrawling: false,
     type: 'api'
+  },
+  {
+    id: "newsapi",
+    name: "NewsAPI",
+    category: "news",
+    region: "global",
+    websiteUrl: "https://newsapi.org/",
+    iconUrl: "https://newsapi.org/favicon-32x32.png",
+    requiresCrawling: false,
+    type: 'api'
   }
 ];
 

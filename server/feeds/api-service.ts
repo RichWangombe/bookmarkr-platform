@@ -212,6 +212,152 @@ function determineCategoryFromTags(content: string): string {
   return "news";
 }
 
+// Handles NewsAPI (free tier) with error handling and rate limiting
+async function fetchFromNewsAPI(query?: string, category?: string, max: number = 20, retries = 2): Promise<NewsItem[]> {
+  try {
+    // Cache key based on query and category
+    const cacheKey = `newsapi-${query || ''}-${category || 'top'}`;
+    
+    // Check cache first - saves API quota
+    const cacheTTL = getAdaptiveTTL(category);
+    if (apiCache[cacheKey] && 
+        (new Date().getTime() - apiCache[cacheKey].timestamp.getTime() < cacheTTL)) {
+      log(`Using cached data for NewsAPI query: ${query || category || 'top headlines'} (TTL: ${Math.round(cacheTTL/60000)} minutes)`, 'api-service');
+      return apiCache[cacheKey].data;
+    }
+    
+    // Base URL 
+    let apiUrl = 'https://newsapi.org/v2/';
+    
+    // API key from environment
+    const apiKey = process.env.NEWSAPI_KEY;
+    
+    if (!apiKey) {
+      log('No NEWSAPI_KEY found in environment variables', 'api-service');
+      return [];
+    }
+    
+    // Determine endpoint based on query
+    if (query) {
+      // Use 'everything' endpoint for searches
+      apiUrl += `everything?q=${encodeURIComponent(query)}`;
+    } else if (category && category !== 'news') {
+      // Use 'top-headlines' with category for categories
+      apiUrl += `top-headlines?category=${mapToNewsApiCategory(category)}`;
+    } else {
+      // Default to top headlines
+      apiUrl += 'top-headlines?';
+    }
+    
+    // Add common parameters
+    apiUrl += `&apiKey=${apiKey}&language=en&pageSize=${max}`;
+    
+    // Add country only for top-headlines
+    if (!query) {
+      apiUrl += '&country=us';
+    }
+    
+    // Rotate user agents to avoid detection
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15',
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
+    ];
+    
+    const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+    
+    // Fetch data with better error handling
+    try {
+      log(`Fetching from NewsAPI: ${query || category || 'top headlines'}`, 'api-service');
+      const response = await axios.get(apiUrl, {
+        headers: {
+          'User-Agent': userAgent,
+          'X-Api-Key': apiKey,
+          'Accept': 'application/json'
+        },
+        timeout: 15000
+      });
+      
+      if (response.data && response.data.articles && Array.isArray(response.data.articles)) {
+        // Transform to our standard NewsItem format
+        const items: NewsItem[] = response.data.articles.map((article: any) => {
+          // Create a deterministic ID
+          const id = `newsapi-${Buffer.from(article.url || '').toString('base64').substring(0, 12)}`;
+          
+          return {
+            id,
+            title: article.title || 'Untitled Article',
+            description: article.description || '',
+            content: article.content || article.description || '',
+            url: article.url || '',
+            imageUrl: article.urlToImage || undefined,
+            publishedAt: article.publishedAt ? new Date(article.publishedAt) : new Date(),
+            source: {
+              id: 'newsapi',
+              name: article.source?.name || 'NewsAPI',
+              iconUrl: 'https://newsapi.org/favicon-32x32.png'
+            },
+            category: determineCategoryFromTags(article.title + ' ' + article.description),
+            tags: generateTagsFromContent(article.title + ' ' + article.description)
+          };
+        }).filter((item: NewsItem) => item.url && item.title); // Filter out any items missing essential fields
+        
+        // Update cache
+        apiCache[cacheKey] = {
+          data: items,
+          timestamp: new Date()
+        };
+        
+        log(`Fetched ${items.length} articles from NewsAPI`, 'api-service');
+        return items;
+      }
+      
+      return [];
+    } catch (error: any) {
+      // Specific error handling for different error types
+      if (error.response) {
+        // Server responded with error status
+        log(`NewsAPI error (${error.response.status}): ${error.response.data?.message || 'Unknown error'}`, 'api-service');
+        
+        // Handle rate limiting with exponential backoff
+        if (error.response.status === 429 && retries > 0) {
+          const backoffTime = 2000 * Math.pow(2, 3 - retries);
+          log(`Rate limited by NewsAPI, retrying in ${backoffTime}ms...`, 'api-service');
+          await delay(backoffTime);
+          return fetchFromNewsAPI(query, category, max, retries - 1);
+        }
+      } else if (error.request) {
+        // Request made but no response received
+        log(`NewsAPI request timeout or network error: ${error.message}`, 'api-service');
+      } else {
+        // Error in setting up the request
+        log(`NewsAPI error in request setup: ${error.message}`, 'api-service');
+      }
+      
+      throw error;
+    }
+  } catch (error) {
+    log(`Error fetching from NewsAPI: ${error}`, 'api-service');
+    // Mark NewsAPI as failing if we encounter persistent errors
+    markSourceAsFailing('newsapi');
+    return [];
+  }
+}
+
+// Maps our internal categories to NewsAPI categories
+function mapToNewsApiCategory(category: string): string {
+  const categoryMap: Record<string, string> = {
+    'technology': 'technology',
+    'business': 'business',
+    'science': 'science',
+    'design': 'entertainment',
+    'ai': 'technology',
+    'news': 'general'
+  };
+  
+  return categoryMap[category] || 'general';
+}
+
 export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
   const allApiSources = getApiSources();
   
@@ -219,21 +365,49 @@ export async function fetchFromApis(category?: string): Promise<NewsItem[]> {
   const reliableSources = getReliableSources(allApiSources);
   log(`Using ${reliableSources.length} reliable API sources out of ${allApiSources.length} total sources`, 'api-service');
   
-  // Currently we only support GNews
+  let results: NewsItem[] = [];
+  
+  // Check for GNews source
   const gNewsSource = reliableSources.find(s => s.id === 'gnews');
-  
-  if (!gNewsSource) {
-    log('No reliable API sources available', 'api-service');
-    return [];
+  if (gNewsSource) {
+    try {
+      // If category is specified, use it as a search query for GNews
+      if (category && category !== 'news') {
+        results = await fetchFromGNews(category);
+      } else {
+        // Otherwise fetch top headlines
+        results = await fetchFromGNews();
+      }
+    } catch (error) {
+      log(`Error fetching from GNews: ${error}`, 'api-service');
+    }
   }
   
-  // If category is specified, use it as a search query
-  if (category && category !== 'news') {
-    return fetchFromGNews(category);
+  // Check for NewsAPI source
+  const newsApiSource = reliableSources.find(s => s.id === 'newsapi');
+  if (newsApiSource) {
+    try {
+      // Use NewsAPI with the category if specified
+      const newsApiResults = await fetchFromNewsAPI(undefined, category);
+      
+      // Combine results, ensuring no duplicates (by URL)
+      const existingUrls = new Set(results.map(item => item.url));
+      for (const item of newsApiResults) {
+        if (!existingUrls.has(item.url)) {
+          results.push(item);
+          existingUrls.add(item.url);
+        }
+      }
+    } catch (error) {
+      log(`Error fetching from NewsAPI: ${error}`, 'api-service');
+    }
   }
   
-  // Otherwise fetch top headlines
-  return fetchFromGNews();
+  if (results.length === 0) {
+    log('No reliable API sources available or all sources failed', 'api-service');
+  }
+  
+  return results;
 }
 
 export async function searchFromApis(query: string): Promise<NewsItem[]> {
@@ -243,14 +417,42 @@ export async function searchFromApis(query: string): Promise<NewsItem[]> {
   const reliableSources = getReliableSources(allApiSources);
   log(`Using ${reliableSources.length} reliable API sources for search out of ${allApiSources.length} total sources`, 'api-service');
   
-  // Currently we only support GNews for search
-  const gNewsSource = reliableSources.find(s => s.id === 'gnews');
+  let results: NewsItem[] = [];
   
-  if (!gNewsSource) {
-    log('No reliable API sources available for search', 'api-service');
-    return [];
+  // Check for GNews source
+  const gNewsSource = reliableSources.find(s => s.id === 'gnews');
+  if (gNewsSource) {
+    try {
+      // Forward the search query to GNews
+      results = await fetchFromGNews(query);
+    } catch (error) {
+      log(`Error searching with GNews: ${error}`, 'api-service');
+    }
   }
   
-  // Forward the search query to GNews
-  return fetchFromGNews(query);
+  // Check for NewsAPI source
+  const newsApiSource = reliableSources.find(s => s.id === 'newsapi');
+  if (newsApiSource) {
+    try {
+      // Use NewsAPI search
+      const newsApiResults = await fetchFromNewsAPI(query);
+      
+      // Combine results, ensuring no duplicates (by URL)
+      const existingUrls = new Set(results.map(item => item.url));
+      for (const item of newsApiResults) {
+        if (!existingUrls.has(item.url)) {
+          results.push(item);
+          existingUrls.add(item.url);
+        }
+      }
+    } catch (error) {
+      log(`Error searching with NewsAPI: ${error}`, 'api-service');
+    }
+  }
+  
+  if (results.length === 0) {
+    log('No reliable API sources available for search or all sources failed', 'api-service');
+  }
+  
+  return results;
 }
