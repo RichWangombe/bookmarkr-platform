@@ -134,6 +134,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </h3>
                 </div>
                 
+                {/* Technology */}
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -154,30 +155,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </Link>
                 </motion.div>
                 
+                {/* Business */}
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35 }}
-                >
-                  <Link
-                    href="/design"
-                    onClick={() => isMobile && onClose()}
-                    className={cn(
-                      "flex items-center p-3 rounded-lg font-medium transition-all",
-                      location === "/design"
-                        ? "text-orange-500 bg-orange-500/10"
-                        : "hover:bg-muted text-foreground"
-                    )}
-                  >
-                    <i className="ri-paint-brush-line mr-3 text-lg text-orange-500"></i>
-                    Design
-                  </Link>
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
                 >
                   <Link
                     href="/business"
@@ -194,26 +176,49 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </Link>
                 </motion.div>
                 
+                {/* World News */}
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link
+                    href="/world"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/world"
+                        ? "text-emerald-500 bg-emerald-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-earth-line mr-3 text-lg text-emerald-500"></i>
+                    World News
+                  </Link>
+                </motion.div>
+                
+                {/* Politics */}
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.45 }}
                 >
                   <Link
-                    href="/ai"
+                    href="/politics"
                     onClick={() => isMobile && onClose()}
                     className={cn(
                       "flex items-center p-3 rounded-lg font-medium transition-all",
-                      location === "/ai"
-                        ? "text-purple-500 bg-purple-500/10"
+                      location === "/politics"
+                        ? "text-red-500 bg-red-500/10"
                         : "hover:bg-muted text-foreground"
                     )}
                   >
-                    <i className="ri-robot-line mr-3 text-lg text-purple-500"></i>
-                    AI & ML
+                    <i className="ri-government-line mr-3 text-lg text-red-500"></i>
+                    Politics
                   </Link>
                 </motion.div>
                 
+                {/* Science */}
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -231,6 +236,90 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   >
                     <i className="ri-flask-line mr-3 text-lg text-teal-500"></i>
                     Science
+                  </Link>
+                </motion.div>
+                
+                {/* AI & ML */}
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  <Link
+                    href="/ai"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/ai"
+                        ? "text-purple-500 bg-purple-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-robot-line mr-3 text-lg text-purple-500"></i>
+                    AI & ML
+                  </Link>
+                </motion.div>
+                
+                {/* Health */}
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  <Link
+                    href="/health"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/health"
+                        ? "text-pink-500 bg-pink-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-heart-pulse-line mr-3 text-lg text-pink-500"></i>
+                    Health
+                  </Link>
+                </motion.div>
+                
+                {/* Sports */}
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.65 }}
+                >
+                  <Link
+                    href="/sports"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/sports"
+                        ? "text-cyan-500 bg-cyan-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-basketball-line mr-3 text-lg text-cyan-500"></i>
+                    Sports
+                  </Link>
+                </motion.div>
+                
+                {/* Entertainment */}
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <Link
+                    href="/entertainment"
+                    onClick={() => isMobile && onClose()}
+                    className={cn(
+                      "flex items-center p-3 rounded-lg font-medium transition-all",
+                      location === "/entertainment"
+                        ? "text-yellow-500 bg-yellow-500/10"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <i className="ri-film-line mr-3 text-lg text-yellow-500"></i>
+                    Entertainment
                   </Link>
                 </motion.div>
               </div>

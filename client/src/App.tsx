@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Favorites from "@/pages/favorites";
 import Latest from "@/pages/latest";
+import CategoryPage, { categoryMap } from "@/pages/category";
 import { AppLayout } from "@/layouts/app-layout";
 
 function Router() {
@@ -16,6 +17,12 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/favorites" component={Favorites} />
       <Route path="/latest" component={Latest} />
+      
+      {/* Category routes */}
+      {Object.keys(categoryMap).map(category => (
+        <Route key={category} path={`/${category}`} component={CategoryPage} />
+      ))}
+      
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
