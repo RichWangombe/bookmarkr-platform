@@ -30,6 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const folderId = req.query.folderId ? Number(req.query.folderId) : undefined;
     const favorite = req.query.favorite === "true";
     const tagId = req.query.tagId ? Number(req.query.tagId) : undefined;
+    const sort = req.query.sort as string | undefined;
     
     let bookmarks;
     
@@ -43,6 +44,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       bookmarks = await storage.getBookmarksByTag(tagId);
     } else {
       bookmarks = await storage.getAllBookmarks();
+    }
+
+    // Apply sorting if requested
+    if (sort === 'latest') {
+      bookmarks = bookmarks.sort((a, b) => {
+        // If createdAt is available, use it for sorting
+        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        return dateB.getTime() - dateA.getTime(); // Sort newest first
+      });
     }
     
     res.json(bookmarks);
