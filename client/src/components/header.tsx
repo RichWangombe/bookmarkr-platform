@@ -16,9 +16,10 @@ interface HeaderProps {
   onMenuToggle: () => void;
   onSearch: (query: string) => void;
   searchQuery: string;
+  onAddBookmark?: () => void;
 }
 
-export function Header({ onMenuToggle, onSearch, searchQuery }: HeaderProps) {
+export function Header({ onMenuToggle, onSearch, searchQuery, onAddBookmark }: HeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery);
   const { theme, setTheme } = useTheme();
   
@@ -103,7 +104,7 @@ export function Header({ onMenuToggle, onSearch, searchQuery }: HeaderProps) {
             <span className="sr-only">Notifications</span>
           </Button>
           
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={onAddBookmark}>
             <BookmarkPlus className="h-5 w-5" />
             <span className="sr-only">Add bookmark</span>
           </Button>

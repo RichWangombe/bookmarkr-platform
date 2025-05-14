@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import { useLocation } from "wouter";
 import useMobile from "@/hooks/use-mobile";
+import { AddBookmarkDialog } from "@/components/add-bookmark-dialog";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddBookmarkOpen, setIsAddBookmarkOpen] = useState(false);
   const isMobile = useMobile();
   const [location, navigate] = useLocation();
 
@@ -37,6 +39,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       navigate("/");
     }
   };
+  
+  const handleAddBookmark = () => {
+    setIsAddBookmarkOpen(true);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden dark:bg-gradient-to-br dark:from-[#0a0e17] dark:to-[#0f1525]">
@@ -49,11 +55,18 @@ export function AppLayout({ children }: AppLayoutProps) {
           onMenuToggle={toggleSidebar} 
           onSearch={handleSearch}
           searchQuery={searchQuery}
+          onAddBookmark={handleAddBookmark}
         />
         <div className="flex-1 dark:bg-transparent">
           {children}
         </div>
       </main>
+
+      {/* Add Bookmark Dialog */}
+      <AddBookmarkDialog
+        open={isAddBookmarkOpen}
+        onOpenChange={setIsAddBookmarkOpen}
+      />
     </div>
   );
 }
