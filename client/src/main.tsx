@@ -4,7 +4,7 @@ import "./index.css";
 import { ThemeProvider } from "./components/theme-provider";
 
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider defaultTheme="light" storageKey="bookmarkr-theme">
+  <ThemeProvider defaultTheme="dark" storageKey="bookmarkr-theme">
     <App />
   </ThemeProvider>
 );
