@@ -27,13 +27,16 @@ function isCacheStale(timestamp: Date): boolean {
 /**
  * Combines and deduplicates news items from multiple sources
  * Also enhances items with fallback images if needed
+ * Enhanced with more robust deduplication to prevent similar articles
  */
 function combineAndDeduplicate(items1: NewsItem[], items2: NewsItem[]): NewsItem[] {
   const combined = [...items1, ...items2];
   const uniqueMap = new Map<string, NewsItem>();
+  const urlMap = new Map<string, string>(); // Track URLs for deduplication
+  const titleMap = new Map<string, Set<string>>(); // Track normalized titles
   
-  // Use Map to deduplicate by ID
-  combined.forEach(item => {
+  // Use Map to deduplicate by ID, URL, and similar titles
+  for (const item of combined) {
     // Add fallback image if the item doesn't have one
     if (!item.imageUrl) {
       item.imageUrl = getFallbackImage(item.category, item.title);
@@ -49,10 +52,81 @@ function combineAndDeduplicate(items1: NewsItem[], items2: NewsItem[]): NewsItem
       }
     }
     
+    // Skip if we already have this exact URL
+    if (urlMap.has(item.url)) {
+      continue;
+    }
+    
+    // Normalize title for fuzzy comparison - remove special chars and lowercase
+    const normalizedTitle = item.title
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Skip if very similar title exists (avoid duplicates from different sources)
+    let isDuplicate = false;
+    
+    // For each category of articles we've seen
+    const entries = Array.from(titleMap.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [category, titles] = entries[i];
+      if (category === item.category) {
+        const titleArray = Array.from(titles);
+        for (let j = 0; j < titleArray.length; j++) {
+          const existingTitle = titleArray[j];
+          // Calculate similarity - if titles are almost the same or one contains the other
+          if (
+            (normalizedTitle.length > 20 && existingTitle.includes(normalizedTitle)) ||
+            (existingTitle.length > 20 && normalizedTitle.includes(existingTitle)) ||
+            (normalizedTitle.length > 30 && similarity(normalizedTitle, existingTitle) > 0.75)
+          ) {
+            isDuplicate = true;
+            break;
+          }
+        }
+      }
+      if (isDuplicate) break;
+    }
+    
+    if (isDuplicate) {
+      continue; // Skip this duplicate item
+    }
+    
+    // Track this item's URL and title
+    urlMap.set(item.url, item.id);
+    
+    // Store normalized title by category
+    if (!titleMap.has(item.category)) {
+      titleMap.set(item.category, new Set());
+    }
+    titleMap.get(item.category)!.add(normalizedTitle);
+    
+    // Add to unique items
     uniqueMap.set(item.id, item);
-  });
+  }
   
   return Array.from(uniqueMap.values());
+}
+
+/**
+ * Calculate text similarity between two strings
+ * This is a simple implementation of Jaccard similarity index
+ */
+function similarity(str1: string, str2: string): number {
+  if (str1 === str2) return 1.0;
+  if (str1.length < 3 || str2.length < 3) return 0.0;
+  
+  // Create sets of words for comparison
+  const set1 = new Set(str1.split(' '));
+  const set2 = new Set(str2.split(' '));
+  
+  // Find intersection
+  const array1 = Array.from(set1);
+  const intersection = new Set(array1.filter(x => set2.has(x)));
+  
+  // Calculate Jaccard index: intersection size / union size
+  return intersection.size / (set1.size + set2.size - intersection.size);
 }
 
 /**
@@ -134,10 +208,12 @@ export async function getAllNews(): Promise<NewsItem[]> {
       fetchFromSocialPlatforms()
     ]);
     
-    // Combine all sources with deduplication
-    let combined = combineAndDeduplicate(rssNews, crawledNews);
-    combined = combineAndDeduplicate(combined, apiNews);
-    combined = combineAndDeduplicate(combined, socialNews);
+    // Combine all sources with enhanced deduplication
+    // Collect all items first, then apply single robust deduplication pass
+    const allItems = [...rssNews, ...crawledNews, ...apiNews, ...socialNews];
+    
+    // Apply our enhanced deduplication in a single pass for better results
+    const combined = combineAndDeduplicate(allItems, []);
     
     const sorted = sortByRecency(combined);
     
@@ -183,10 +259,12 @@ export async function getNewsByCategory(category: string): Promise<NewsItem[]> {
       fetchFromSocialPlatforms(category)
     ]);
     
-    // Combine all sources with deduplication
-    let combined = combineAndDeduplicate(rssNews, crawledNews);
-    combined = combineAndDeduplicate(combined, apiNews);
-    combined = combineAndDeduplicate(combined, socialNews);
+    // Combine all sources with enhanced deduplication
+    // Collect all items first, then apply single robust deduplication pass
+    const allItems = [...rssNews, ...crawledNews, ...apiNews, ...socialNews];
+    
+    // Apply our enhanced deduplication in a single pass for better results
+    const combined = combineAndDeduplicate(allItems, []);
     
     const sorted = sortByRecency(combined);
     
