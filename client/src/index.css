@@ -27,40 +27,40 @@
   }
 
   .dark {
-    /* Enhanced dark theme with a deep blue-black base */
-    --background: 222 47% 4%;
-    --foreground: 210 20% 98%;
+    /* Enhanced darker blue-black base for a more atmospheric look */
+    --background: 230 50% 2%;
+    --foreground: 210 25% 98%;
     
-    /* Card and popover with subtle blue tint */
-    --card: 220 40% 5%;
-    --card-foreground: 210 20% 98%;
-    --popover: 220 40% 5%;
-    --popover-foreground: 210 20% 98%;
+    /* Card and popover with deeper blue tint for stronger contrast */
+    --card: 228 45% 4%;
+    --card-foreground: 210 25% 98%;
+    --popover: 228 45% 4%;
+    --popover-foreground: 210 25% 98%;
     
-    /* Vibrant blue primary */
-    --primary: 222 90% 65%;
-    --primary-foreground: 210 20% 98%;
+    /* More vibrant electric blue primary for energy and focus */
+    --primary: 230 90% 60%;
+    --primary-foreground: 210 25% 98%;
     
-    /* Darker secondary tones */
-    --secondary: 220 25% 12%;
-    --secondary-foreground: 210 20% 98%;
+    /* Deeper secondary tones with more saturation */
+    --secondary: 228 35% 10%;
+    --secondary-foreground: 210 25% 98%;
     
-    /* Refined muted colors */
-    --muted: 220 25% 10%;
-    --muted-foreground: 220 20% 70%;
+    /* Refined muted colors with more blue undertone */
+    --muted: 228 35% 8%;
+    --muted-foreground: 228 30% 75%;
     
-    /* Accent with slight blue tint */
-    --accent: 222 30% 15%;
-    --accent-foreground: 210 20% 98%;
+    /* Accent with deeper blue tint for visual hierarchy */
+    --accent: 228 40% 12%;
+    --accent-foreground: 210 25% 98%;
     
-    /* Destructive red but more subdued */
-    --destructive: 0 62.8% 40%;
-    --destructive-foreground: 210 20% 98%;
+    /* Deeper destructive red for better visibility in dark theme */
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 210 25% 98%;
     
-    /* Borders and inputs slightly blue-tinted */
-    --border: 220 25% 12%;
-    --input: 220 25% 12%;
-    --ring: 222 90% 65%;
+    /* Borders and inputs with more pronounced blue tint */
+    --border: 228 35% 10%;
+    --input: 228 35% 10%;
+    --ring: 230 90% 60%;
   }
   
   * {
@@ -74,7 +74,12 @@
 
 /* Dark theme stylistic elements */
 .dark body {
-  background: linear-gradient(to bottom right, hsl(220, 40%, 3%), hsl(225, 40%, 6%));
+  background: linear-gradient(135deg, 
+    hsl(230, 60%, 3%) 0%,
+    hsl(235, 60%, 5%) 40%,
+    hsl(240, 60%, 7%) 70%,
+    hsl(245, 50%, 6%) 100%
+  );
   min-height: 100vh;
   background-attachment: fixed;
 }
@@ -93,20 +98,29 @@
   z-index: -1;
 }
 
-/* Bookmark tile styling for the masonry grid */
+/* Enhanced bookmark tile styling for the masonry grid */
 .dark .bookmark-tile {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 0 1px hsla(230, 60%, 15%, 0.3);
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   position: relative;
   overflow: hidden;
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    180deg, 
+    hsla(230, 60%, 10%, 0.8) 0%,
+    hsla(235, 60%, 7%, 0.9) 100%
+  );
 }
 
 .dark .bookmark-tile:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px hsla(var(--primary), 0.2);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.7), 
+    0 0 0 1px hsla(var(--primary), 0.3),
+    0 0 15px hsla(var(--primary), 0.2);
   transform: translateY(-5px) scale(1.02);
 }
 
-/* Glass morphism effects on hover */
+/* Glass morphism effects on hover with enhanced blue glow */
 .dark .bookmark-tile::after {
   content: "";
   position: absolute;
@@ -114,7 +128,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%);
+  background: linear-gradient(
+    120deg, 
+    hsla(230, 100%, 70%, 0.08) 0%, 
+    hsla(240, 100%, 70%, 0.03) 50%,
+    rgba(255,255,255,0) 100%
+  );
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
@@ -124,72 +143,96 @@
   opacity: 1;
 }
 
-/* Enhanced bookmark controls */
+/* Enhanced bookmark controls with more refined glass effect */
 .dark .bookmark-controls {
-  backdrop-filter: blur(4px);
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  background: hsla(230, 60%, 7%, 0.7);
+  border: 1px solid hsla(230, 80%, 60%, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
   transition: all 0.3s ease;
 }
 
 .dark .bookmark-controls:hover {
-  background: rgba(var(--primary), 0.2);
+  background: hsla(230, 80%, 15%, 0.8);
+  border: 1px solid hsla(230, 80%, 60%, 0.4);
 }
 
-/* Refined scrollbar for dark theme */
+/* Elegant scrollbar for dark theme with blue accents */
 .dark ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: hsl(220, 25%, 8%);
+  background: hsla(230, 40%, 6%, 0.5);
+  border-radius: 8px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(222, 30%, 15%);
-  border-radius: 4px;
+  background: hsla(228, 60%, 30%, 0.5);
+  border-radius: 8px;
+  border: 1px solid hsla(230, 80%, 20%, 0.3);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(222, 90%, 40%);
+  background: hsla(230, 90%, 50%, 0.7);
+  border: 1px solid hsla(230, 90%, 60%, 0.3);
 }
 
-/* Subtle text and UI element glow effects */
-.dark h1, .dark h2, .dark h3 {
-  text-shadow: 0 0 10px hsla(var(--primary), 0.2);
+/* Enhanced text and UI element glow effects */
+.dark h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 15px hsla(var(--primary), 0.3);
+  color: hsla(210, 20%, 98%, 1);
+}
+
+.dark h2, .dark h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 10px hsla(var(--primary), 0.25);
 }
 
 .dark .primary-glow {
-  box-shadow: 0 0 15px hsla(var(--primary), 0.3);
+  box-shadow: 
+    0 0 15px hsla(var(--primary), 0.3),
+    0 0 30px hsla(var(--primary), 0.15);
 }
 
-/* Glass morphism effect for certain components */
+/* Enhanced glass morphism effect for components with deeper blue finish */
 .dark .glass-panel {
-  background: hsla(220, 40%, 8%, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid hsla(var(--primary), 0.1);
+  background: hsla(230, 50%, 8%, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsla(var(--primary), 0.2);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.3),
+    0 0 0 1px hsla(230, 60%, 20%, 0.2),
+    inset 0 0 0 1px hsla(230, 80%, 60%, 0.1);
+  border-radius: 8px;
 }
 
-/* Staggered animations for masonry grid */
+/* Improved staggered animations for masonry grid with slight blue glow */
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(20px);
+    filter: drop-shadow(0 0 0 hsla(var(--primary), 0));
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    filter: drop-shadow(0 0 8px hsla(var(--primary), 0.2));
   }
 }
 
-/* Pulse animation for primary elements */
+/* Enhanced pulse animation for interactive elements */
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 hsla(var(--primary), 0.3);
+    box-shadow: 0 0 0 0 hsla(var(--primary), 0.4);
   }
-  70% {
-    box-shadow: 0 0 0 10px hsla(var(--primary), 0);
+  50% {
+    box-shadow: 0 0 0 8px hsla(var(--primary), 0.1);
   }
   100% {
     box-shadow: 0 0 0 0 hsla(var(--primary), 0);
@@ -197,7 +240,16 @@
 }
 
 .dark .pulse-animation {
-  animation: pulse 2s infinite;
+  animation: pulse 2.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Glow effect for focused elements */
+.dark .focus-glow:focus, 
+.dark .focus-glow:focus-within {
+  box-shadow: 0 0 0 2px hsla(var(--primary), 0.3),
+              0 0 15px hsla(var(--primary), 0.25);
+  outline: none;
+  transition: box-shadow 0.3s ease;
 }
 
 @layer utilities {
