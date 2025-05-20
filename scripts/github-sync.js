@@ -1,6 +1,6 @@
 // Automated GitHub sync script
-const { execSync } = require('child_process');
-const path = require('path');
+import { execSync } from 'child_process';
+import path from 'path';
 
 // Execute shell command and print output
 function run(command) {

@@ -122,7 +122,7 @@ export function BookmarkTile({
                     text-white rounded-full flex items-center cursor-pointer transition-colors"
                   onClick={() => onTagClick && onTagClick(tag.id)}
                 >
-                  <TagIcon className="h-3 w-3 mr-1" key={`icon-${tag.id}`} />
+                  <TagIcon className="h-3 w-3 mr-1" />
                   {tag.name}
                 </span>
               ))}
